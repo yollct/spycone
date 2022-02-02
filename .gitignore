@@ -70,6 +70,10 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
+
+##
+data/covid_hs/
 
 # PyBuilder
 target/
