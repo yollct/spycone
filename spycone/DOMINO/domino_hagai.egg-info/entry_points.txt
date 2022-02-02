@@ -1,0 +1,4 @@
+[console_scripts]
+domino = src.runner:main_domino
+slicer = src.runner:main_slicer
+

@@ -1,0 +1,635 @@
+import numpy as np
+import pandas as pd
+from collections import defaultdict
+from scipy.stats import kruskal, mannwhitneyu, ttest_ind
+from scipy.stats import chi2
+import warnings
+from functools import reduce
+from itertools import combinations
+import gc
+import pickle, os
+warnings.simplefilter("ignore")
+from collections import defaultdict
+from functools import partial
+
+from seaborn.rcmod import reset_defaults
+
+from .DataSet import DataSet
+from .BioNetwork import BioNetwork
+from ._iso_function._iso import _iso_switch_between_arrays
+from ._util_stat.qc import plot_silhouette
+from ._util_stat import compute_pvalues
+from ._util_stat.multipletesting import pvalue_correction
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+# def _iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2):
+#         ab = np.sign(arr1-arr2)
+
+#         ##look for switch points
+#         points=[[x for x in range(ab.shape[1]) if ab[r,x] != np.roll(ab[r], 1)[x] and x!=0] for r in range(ab.shape[0])]
+
+#         #points: switch points of all replicates
+#         ##check if all r have switch points
+#         #then take the points where all appeared
+#         def multiple_intersect(points):
+#             return np.unique(list(reduce(lambda x, y: set(x).intersection(set(y)), points)))
+
+#         #calculate differences
+#         #[(abs(a[x-1] - a[x]) + abs(b[x-1] -b[x]))/2 for x in points], a,b
+#         if any(points):
+#             final_sp = multiple_intersect(points) 
+#             if not any(final_sp):
+#                 final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,2)]
+#                 final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
+#                 if not any(final_sp):
+#                     final_sp = reduce(lambda x,y : x+y, points)
+        
+
+#             final_sp = np.sort(final_sp)
+#             # mean of max difference at the time points between 2 arrays for all replicates
+#             allsp_diff = [np.mean([np.max([abs(arr1[r,x-1] - arr2[r,x-1]), abs(arr2[r,x] -arr1[r,x])]) for r in range(arr1.shape[0])]) for x in final_sp]
+            
+#         else:
+#             final_sp = []
+#             allsp_diff=[]
+
+#         #calculate corr
+#         cors = [(1-np.corrcoef(orgarr1[r], orgarr2[r])[0,1])/2 for r in range(arr1.shape[0])]
+        
+#         #for each switch point, the max switch diff before and after 
+#         #allsp : all the before and after switch differences for all switch points
+#         return len(final_sp)/arr1.shape[1], allsp_diff, final_sp, np.mean(cors)
+
+class iso_function():
+    """
+    Isoform level analysis
+
+    Parameters 
+    ----------
+    DataSet : 
+        DataSet object
+    Species : 
+        Species ID
+
+    Return 
+    --------
+    Create an instance for isoform switch analysis. 
+    
+    """
+    def __init__(self, dataset):
+        self.dataset = dataset
+        self.species = dataset.species
+    
+        if "." in dataset.transcript_id[0]:
+            infile = open(os.path.join(dir_path,f"data/network/{dataset.species}_ver_trans_pfam.pkl"),'rb')
+            exfile = open(os.path.join(dir_path,f"data/network/exons_{dataset.species}_ensembl.pkl"),'rb')
+        else:
+            infile = open(os.path.join(dir_path,f"data/network/{dataset.species}_ver_trans_pfam.pkl"),'rb')
+            exfile = open(os.path.join(dir_path,f"data/network/exons_{dataset.species}_ensembl.pkl"),'rb')
+        self.trans_pfam_dict = pickle.load(infile)
+        self.trans_exon_dict = pickle.load(exfile)
+
+        groupdict = defaultdict(lambda: defaultdict(list))
+        for idx, sym in enumerate(self.dataset.gene_id):
+            if sym != 'n':
+                groupdict[sym]['trans_id'].append(self.dataset.transcript_id[idx])
+                groupdict[sym]['indices'].append(idx)
+                groupdict[sym]['array'].append(self.dataset.timeserieslist[:,idx,:])
+        
+        #normlize work
+        for sym, df in groupdict.items():
+            org = df['array'][0]
+            for x in range(1,len(df['array'])):
+                org = np.hstack([org, df['array'][x]])
+            
+            df['array'] = org.reshape(self.dataset.reps1, len(df['array']), self.dataset.timepts)
+            
+            tmp = np.array([df['array'][x]/np.sum(df['array'][x], axis=0) for x in range(df['array'].shape[0])])
+            tmp[np.isnan(tmp)] = 1
+            groupdict[sym]['normarr'] = tmp
+
+        self.normdf = groupdict
+
+    def _take_interval(self, sp, timepts):
+        newsp = np.insert(sp,0,0)
+        newsp = np.append(newsp, timepts)
+        intervals = []
+        for i in range(len(sp)):
+            intervals.append(np.min([newsp[i+1]-newsp[i], newsp[i+2]-newsp[i+1]]))
+        return intervals
+
+    
+
+    def _event_enrichness(self, normdf, sp, arr1, arr2):
+        ##penalize low expressed genes
+        penal1 = np.mean([arr1[r]/np.max(normdf[r],axis=0) for r in range(normdf.shape[0])],axis=0)
+        penal2 = np.mean([arr2[r]/np.max(normdf[r],axis=0) for r in range(normdf.shape[0])],axis=0)
+
+        return np.mean(np.append(penal1[sp-1:sp+1],penal2[sp-1:sp+1]))
+
+    def _zaka_event_enrichness(self, normdf, sp, arr1, arr2):
+        ##penalize low expressed genes
+        penal1 = np.mean([arr1[r]/np.max(normdf[r],axis=0) for r in range(normdf.shape[0])],axis=0)
+        penal2 = np.mean([arr2[r]/np.max(normdf[r],axis=0) for r in range(normdf.shape[0])],axis=0)
+
+        return np.mean(np.append(penal1[sp-1:sp+1],penal2[sp-1:sp+1]))
+        
+    def _remove_low_expressed(self):
+        #return isoform indices
+        timedf = pd.concat([pd.DataFrame(self.timeserieslist[x]) for x in range(self.timeserieslist.shape[0])], axis=1)
+        geneexp = pd.concat([pd.Series(self.symbs, name='symbol'), timedf],axis=1)
+
+        #filter out those higher than 2 by default (can change)
+        lowgenes_idx = np.where(geneexp.groupby('symbol').agg('sum').mean(axis=1) < 2)[0]
+        #get the gene names lower than cutoff
+        lowgenes = geneexp.iloc[lowgenes_idx, 0] 
+
+
+        return lowgenes
+
+    def _remove_low_abundance(self, pre_normdf):
+        #return isoform indices
+    
+
+        #calculate fold change of major isoform with respect to the minor isoforms
+        lowexp = np.mean(np.max(pre_normdf, axis=2),axis=0)
+        
+        #filter out those higher than 2 by default (can change)
+        lowgenes = np.where(lowexp<=0.1)[0]
+        
+        filtered_normdf = np.delete(pre_normdf, lowgenes, axis=1)
+        return filtered_normdf, lowgenes
+
+    def _combine_pvals(self, pvals):
+        ##no used
+        chisqprob = lambda chisq, df: chi2.sf(chisq, df)
+        s = -2 * np.sum(np.log(pvals))
+        
+        return chisqprob(s, 2 * len(pvals))
+
+        
+    def _take_interval(self, sp):
+        #check interval between switch points
+        newsp = np.insert(sp,0,0)
+        newsp = np.append(newsp, self.dataset.timepts)
+        intervals = []
+        for i in range(len(sp)):
+            intervals.append(np.min([newsp[i+1]-newsp[i], newsp[i+2]-newsp[i+1]]))
+        return intervals
+
+    def _diff_before_after_switch(self, normdf, arr1, arr2, allsp_diff, switch_points):
+        if self.dataset.reps1>1:
+            #get the intervals between time points
+            interv = self._take_interval(switch_points)
+            #the best sp has the highest mean differences before and after switch points between the two time series 
+            bestpval1=1
+            bestpval2=1
+            finaldiff = 0
+            finalenrich = 0
+            best_switch_point=0
+
+            for bp, pt in enumerate(switch_points):
+                if interv[bp] == 1:
+                    iso1_pval = ttest_ind(arr1[:,pt-1], arr1[:,pt])
+                    iso2_pval = ttest_ind(arr2[:,pt-1], arr2[:,pt])
+                    thisdiff = min(abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt])))
+                    thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+
+                else:
+                    iso1_pval = ttest_ind(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                    iso2_pval = ttest_ind(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                    thisdiff = min(abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))) 
+                    thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+
+                if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
+                    bestpval1 = iso1_pval[1]
+                    bestpval2 = iso2_pval[1]
+                    finaldiff = thisdiff
+                    finalenrich = thisenrich
+                    best_switch_point=pt
+                
+            return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
+
+        else:             
+            #the best sp has the highest mean differences before and after switch points between the two time series 
+            if any(allsp_diff):
+                bs = np.argmax(allsp_diff)
+                finalenrich = self._event_enrichness(normdf, bs, arr1, arr2)
+                return allsp_diff[bs], 1, 1, switch_points[bs], finalenrich
+            else:
+                return 0,1,1,0,0
+
+    def _isoform_differential_usage(self, thisnormdf, thisexp):
+        #define major transcript
+        #highest mean across time in averaged replicates
+    
+        #vis
+        # for n in range(normdf.shape[1]):
+        #     plt.plot(normdf[0,n,:])
+        # plt.show()
+        
+        iso_ratio = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        iso_diff_value = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        maj_pval = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        min_pval = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        final_spp = [[] for _ in range(thisnormdf.shape[1])]
+        corr_list = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        enrichness = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+
+        #check for all pairs
+        for maj in range(thisnormdf.shape[1]):
+            orgarr1 = thisexp[:,maj,:] 
+            arr1 = thisnormdf[:,maj,:]
+            for x in range(thisnormdf.shape[1]): #each minor transcript
+                if x == maj:
+                    iso_ratio[maj, x], iso_diff_value[maj, x] = 0, 0
+                    final_spp[maj].append(0)
+                    corr_list[maj, x] = 0
+                    continue
+                arr2 = thisnormdf[:,x,:]
+                orgarr2 = thisexp[:,x,:]
+
+                ##finding switch points, correlation
+                iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = _iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
+
+                ##calculate diff. value, p-values
+                iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
+                final_spp[maj].append(bs)
+
+
+        return iso_ratio, maj_pval, min_pval, iso_diff_value, final_spp, corr_list, enrichness
+
+
+    def _correlation_coef(self, thisnormdf, maj):
+        m_normdf = np.median(thisnormdf, axis=0)
+        
+        corr_mat = (1-np.corrcoef(m_normdf))/2
+
+
+        return corr_mat
+    
+
+    def _exclusive_domain(self, iso1, iso2):
+        if iso1 in self.trans_pfam_dict.keys():
+            pfams1 = self.trans_pfam_dict[iso1]
+        else: 
+            pfams1 = []
+
+        if iso2 in self.trans_pfam_dict.keys():
+            pfams2 = self.trans_pfam_dict[iso2]
+        else: 
+            pfams2 = []
+        
+        diff = set(pfams1).symmetric_difference(set(pfams2))
+        diff = [x for x in list(diff) if not type(x)==float]
+        return diff
+
+    def _diff_exons(self, iso1, iso2, final_sp, isoid):
+        if iso1 in self.trans_exon_dict.keys():
+            exons1 = self.trans_exon_dict[iso1]
+        else: 
+            exons1 = []
+
+        if iso2 in self.trans_exon_dict.keys():
+            exons2 = self.trans_exon_dict[iso2]
+        else: 
+            exons2 = []
+
+        ##major or minor isoforms
+        ##define isoform_from
+
+        iso1_id = np.where(np.isin(self.normdf[isoid]['trans_id'], iso1))[0][0]
+        iso2_id = np.where(np.isin(self.normdf[isoid]['trans_id'], iso2))[0][0]
+        iso1_values = np.median(self.normdf[isoid]['array'][:,iso1_id, final_sp-1])
+        iso2_values = np.median(self.normdf[isoid]['array'][:,iso2_id, final_sp-1])
+        
+        if iso1_values > iso2_values:
+            majoriso, minoriso = iso1, iso2
+            majoriso_exons, minoriso_exons = exons1, exons2
+        else:
+            majoriso, minoriso = iso2, iso1
+            majoriso_exons, minoriso_exons = exons2, exons1
+
+        gain_exons = set(majoriso_exons).difference(set(minoriso_exons))
+        loss_exons = set(minoriso_exons).difference(set(majoriso_exons))
+        nondiff = set(exons1).intersection(set(exons2))
+        gain_exons = [x for x in list(gain_exons) if not type(x)==float]
+        loss_exons = [x for x in list(loss_exons) if not type(x)==float]
+        nondiff = [x for x in list(nondiff) if not type(x)==float]
+
+        return majoriso, minoriso, gain_exons, loss_exons, nondiff
+        
+                
+    def detect_isoform_switch(self, combine = "median", filtering = True, filter_cutoff = 1, corr_cutoff=0.5, event_im_cutoff = 0.1, min_diff = 0.05, p_val_cutoff = 0.05, n_permutations=1000, adjustp='fdr_bh', diff_domain=True, norm=True):
+        """
+        Detect isoform switching events along time series.
+        
+        Parameters
+        ----------
+        combine : {'median', 'mean'}
+            aggregation methods for replicates. Default="median"
+
+        filtering : (boolean, default=True) 
+            if True, low expression genes will be filtered out.
+
+        filter_cutoff : default=2
+            expression mean cutoff to filter.
+
+        corr_cutoff : default = 0.7
+            minimum correlation of isoform pairs to be included in the output.
+
+        p_val_cutoff : default = 0.05   
+            significant p-value cutoff to be included in the output.
+
+        min_diff : default = 0.1
+            minimum differences of relative abundance to be included in the output.
+
+        event_im_cutoff : default = 0.1
+            minimum event importance to be included in the output.
+
+        adjustp : str {'fdr_bh' (default), 'holm_bonf', 'bonf'}
+            Method for multiple testing
+            bonf: Bonferroni method
+            holm_bonf: holm-bonferroni method
+            fdr_bh: Benjamin-hochberg false discovery rate
+
+        n_permutations :
+            Number of permutations if permutation test is used.
+
+        Return
+        ------
+
+        DataFrame 
+
+        """
+        #calculate probability and correlation for switching
+        #
+        #isodf = pd.DataFrame({'symbol':DataSet.symbs, 'isoform_id':DataSet.isoform_id})
+        self.min_diff = min_diff
+        self.corr_cutoff = corr_cutoff
+        self.event_im_cutoff = event_im_cutoff
+        self.timeserieslist = self.dataset.timeserieslist
+        self.transcript_id = self.dataset.transcript_id
+        self.symbs = self.dataset.symbs
+        self.gene_id = self.dataset.gene_id
+        if filtering==True:
+            lowgenes = self._remove_low_expressed()
+        else:
+            lowgenes=set()
+        print(str(len(set(lowgenes))) + " of genes with low expression are filtered out!!.")
+
+        print(f"calculating for {len(self.normdf.keys())} genes...")
+              
+        iso_pairs_id = defaultdict(list)
+        iso_dict_info = defaultdict(tuple)
+        for gene, values in self.normdf.items():
+            idxs = values['indices']
+            thisnormdf = values['normarr']
+            thisexp = values['array']
+
+
+            # maj = np.argmax(np.median(np.median(thisexp, axis=0), axis=1))
+            # secondmaj = None
+            # if thisnormdf.shape[1] > 2:
+            #     ##get second maj isoform
+            #     secondmaj = np.argsort(np.median(np.median(thisexp, axis=0), axis=1))[-2]
+
+            # self.normdf[gene]['majs'].append(maj)
+            # self.normdf[gene]['majs'].append(secondmaj)
+            #calculate correlations
+            #corrmat= self.correlation_coef(thisnormdf, maj)
+
+            #calculate isoform ratio
+            res_maj = self._isoform_differential_usage(thisnormdf, thisexp)
+
+            #return major transcript and transcript that switch
+            if self.dataset.reps1 > 1:
+                for ids1, iso_ratio0 in enumerate(res_maj[0]):
+                    for ids2, iso_ratio in enumerate(iso_ratio0):
+                        if iso_ratio >0 :
+                            ##
+                            majoriso, minoriso, gain_exons, loss_exons, nondiff = self._diff_exons(self.transcript_id[idxs[ids1]], self.transcript_id[idxs[ids2]], res_maj[4][ids1][ids2], str(gene))
+                            iso_pairs_id['gene'].append(str(gene))
+                            iso_pairs_id['gene_symb'].append(self.symbs[idxs[ids1]])
+                            iso_pairs_id['major_transcript'].append(majoriso)
+                            iso_pairs_id['minor_transcript'].append(minoriso)
+                            iso_pairs_id['iso_ratio'].append(iso_ratio)
+                            iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
+                            iso_pairs_id['maj_pval'].append(res_maj[1][ids1, ids2])
+                            iso_pairs_id['min_pval'].append(res_maj[2][ids1, ids2])
+                            iso_pairs_id['p_value'].append(self._combine_pvals([res_maj[0][ids1,ids2], res_maj[1][ids1, ids2]]))
+                            iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
+                            iso_pairs_id['final_sp'].append(res_maj[4][ids1][ids2])
+                            iso_pairs_id['event_importance'].append(res_maj[6][ids1][ids2])
+                            iso_pairs_id['gain_exons'].append(gain_exons)
+                            iso_pairs_id['loss_exons'].append(loss_exons)
+                            iso_pairs_id['constant_exons'].append(nondiff)
+
+                            iso_dict_info[self.transcript_id[idxs[ids1]]] = (gene, ids1)
+                            iso_dict_info[self.transcript_id[idxs[ids2]]] = (gene, ids2)
+
+                            if diff_domain == True:
+                                iso_pairs_id['exclusive_domains'].append(self._exclusive_domain(self.transcript_id[idxs[ids1]],self.transcript_id[idxs[ids2]]))
+                            # iso_dict_info[self.isoform_id[idxs[res_maj[3]]]] = (gene, res_maj[3])
+                            # iso_dict_info[self.isoform_id[idxs[ids]]] = (gene, ids)
+
+
+            else:
+                 #p-values is calculated 
+                # for ids, iso_ratio in enumerate(res_maj[0]):
+                #     if iso_ratio >0 :
+                #         iso_pairs_id['gene'].append(gene)
+                #         iso_pairs_id['major_transcript'].append(self.transcript_id[idxs[res_maj[3]]])
+                #         iso_pairs_id['minor_transcript'].append(self.transcript_id[idxs[ids]])
+                #         iso_pairs_id['iso_ratio'].append(iso_ratio)
+                #         iso_pairs_id['diff'].append(res_maj[4][ids])
+                #         iso_pairs_id['corr'].append(res_maj[6][ids])
+                #         iso_pairs_id['final_sp'].append(res_maj[5][ids])
+                #         iso_dict_info[self.transcript_id[idxs[res_maj[3]]]] = (gene, res_maj[3])
+                #         iso_dict_info[self.transcript_id[idxs[ids]]] = (gene, ids)
+
+                for ids1, iso_ratio0 in enumerate(res_maj[0]):
+                    for ids2, iso_ratio in enumerate(iso_ratio0):
+                        if iso_ratio >0 :
+                            ##
+                            majoriso, minoriso, gain_exons, loss_exons, nondiff = self._diff_exons(self.transcript_id[idxs[ids1]], self.transcript_id[idxs[ids2]], res_maj[4][ids1][ids2])
+                            iso_pairs_id['gene'].append(str(gene))
+                            iso_pairs_id['gene_symb'].append(self.symbs[idxs[ids1]])
+                            iso_pairs_id['major_transcript'].append(majoriso)
+                            iso_pairs_id['minor_transcript'].append(minoriso)
+                            iso_pairs_id['iso_ratio'].append(iso_ratio)
+                            iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
+                            iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
+                            iso_pairs_id['final_sp'].append(res_maj[4][ids1][ids2])
+                            iso_pairs_id['event_importance'].append(res_maj[6][ids1][ids2])
+                            iso_pairs_id['gain_exons'].append(gain_exons)
+                            iso_pairs_id['loss_exons'].append(loss_exons)
+                            iso_pairs_id['constant_exons'].append(nondiff)
+
+                            iso_dict_info[self.transcript_id[idxs[ids1]]] = (gene, ids1)
+                            iso_dict_info[self.transcript_id[idxs[ids2]]] = (gene, ids2)
+
+                            if diff_domain == True:
+                                iso_pairs_id['exclusive_domains'].append(self._exclusive_domain(self.transcript_id[idxs[ids1]],self.transcript_id[idxs[ids2]]))
+
+
+        self.isopairs = iso_pairs_id
+        self.iso_dict_info = iso_dict_info
+
+        if self.dataset.reps1 == 1:
+            cal = compute_pvalues.basic_pvalue(testobject=self, object_type="iso_pairs", n_permutations = n_permutations)
+            pval = cal.do_calculate() #self iso_function object
+            iso_pairs_id['p_value'] = pval
+
+            self.isopairs = iso_pairs_id
+
+        res = pd.DataFrame(iso_pairs_id).sort_values('p_value')
+        mct = pvalue_correction(res['p_value'], method=adjustp)
+        res['adj_pval'] = mct.corrected_pvals
+
+        res = res[(res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
+
+        print("----Result statistics----")
+        print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
+        print(f"Events found: {res.shape[0]}")
+        print(f"Events with affecting domains: {np.sum([1 for x in res[  'exclusive_domains'] if len(x)>0])}")
+        print(f"Mean event importance: {res['event_importance'].mean()}")
+        print(f"Mean difference before and after switch: {res['diff'].mean()}")
+        print("--------------------------")
+        print("DONE")
+        
+        self.is_result = res
+        self.dataset.isoobj = self
+
+        return res.reset_index(drop=True)
+
+
+    def _isoform_usage(self, eachgene, norm):
+        #eachgene 3D array [replicates, isoforms, timepoints]
+        result = np.zeros((eachgene.shape[0], eachgene.shape[1], eachgene.shape[2]-1))
+        
+        if norm:
+            #calculate the size factors 
+            sizefactor = np.sum(eachgene, axis=1)
+            sizefactor[sizefactor==0] = 1
+
+            #normalize to transcript abundance for each replicates
+            normdf = np.array([eachgene[x,:,:] / sizefactor[x] for x in range(eachgene.shape[0])])
+        
+        else:
+            normdf = eachgene
+        
+        #subtract usage from next time point
+        for i in range(eachgene.shape[2]-1):
+            result[:,:,i] = np.abs(normdf[:,:,i]-normdf[:,:,i+1])
+    
+        #sum up and take median for one gene across all replicates
+        result = np.median(np.sum(result, axis=1),axis=0)
+        
+        return result
+            
+
+    def total_isoform_usage(self, isd_result=None, norm=True, gene_level=True):
+        '''
+        only genes with more than 1 isoform are computed.
+
+        Parameters
+        ----------
+        ids_result 
+            the result dataframe of isoform switch detection
+
+        norm : `boolean`, default=True
+            if True, it normalizes time series matrix to relative abundance to gene expression.
+
+        gene_level : `boolean`, default=True
+            if True, it calculates total isoform usage for each gene, otherwise individual isoform usage for each isoform
+
+        Return
+        -------
+        New DataSet Object
+        
+        '''
+        isodf = pd.DataFrame({'symbol':self.dataset.gene_id, 'isoform_id':self.dataset.transcript_id})
+        groupdict = isodf.groupby(['symbol']).indices
+        symbolmap = dict(zip(self.dataset.gene_id, self.dataset.symbs))
+        tp = self.dataset.timepts
+        
+        result_df = pd.DataFrame(columns=['entrez','gene'] + ['tp{}'.format(x) for x in range(self.dataset.timepts-1)])
+                
+        if isd_result is not None:
+            keepgenes = isd_result['gene'].unique().tolist()
+        else:
+            keepgenes = np.unique(self.dataset.gene_id)  
+
+        if gene_level is True:        
+            for gene, iso in groupdict.items():
+                if len(iso) > 1 and gene in set(keepgenes):
+                # iso_switch = isd_result[isd_result['gene']==gene]
+                # all_isos = pd.concat([iso_switch.major_isoform, iso_switch.minor_isoform]).unique().tolist()
+                # keepiso = np.where(pd.Series(DataSet.isoform_id).isin(all_isos))[0]
+
+                    eachgene = np.array(self.dataset.timeserieslist[:,iso,:], dtype="double")
+                    
+                    #calculate isoform usage for each gene
+                    res = self._isoform_usage(eachgene, norm)
+                
+                    result_df.loc[result_df.shape[0]] = [gene, symbolmap[gene]] + res.tolist()
+
+            #make changes in DataSet and return new dataset
+            self.dataset.tiu_ts = np.array(result_df.iloc[:,2:])
+            self.dataset.tiu_timeserieslist = np.expand_dims(np.array(result_df.iloc[:,2:]), axis=0)
+            self.dataset.tiu_gene_id = result_df['entrez']
+            self.dataset.tiu_symbs = result_df['gene']
+            self.dataset.tiu_timepts = tp-1
+
+        
+        elif isd_result is not None and gene_level is False:
+            keepgenes = isd_result['gene'].unique().tolist()
+            keep_genes_arrays = np.hstack([self.normdf[x]['normarr'] for x in keepgenes])
+
+            result = np.zeros((keep_genes_arrays.shape[0], keep_genes_arrays.shape[1], keep_genes_arrays.shape[2]-1))
+
+            keep_trans_indices = reduce(lambda x,y: x+y, [self.normdf[x]['indices'] for x in keepgenes])
+            result_trans = self.dataset.transcript_id[keep_trans_indices]
+            result_entrez = self.dataset.gene_id[keep_trans_indices]
+            result_sym = self.dataset.symbs[keep_trans_indices]
+
+            for i in range(keep_genes_arrays.shape[2]-1):
+                result[:,:,i] = np.abs(keep_genes_arrays[:,:,i]-keep_genes_arrays[:,:,i+1])
+
+
+            self.dataset.tiu_ts = result
+            self.dataset.tiu_timeserieslist = result
+            self.dataset.tiu_gene_id = result_entrez
+            self.dataset.tiu_symbs = result_sym
+            self.dataset.tiu_transcript_id = result_trans
+            self.dataset.tiu_timepts = tp-1
+
+        return self.dataset
+
+
+    def isoform_abundance(self, is_result=None):
+        """
+        Get isoform relative abundance based on isoform switched genes
+        """
+        if is_result is None:
+            keepgenes = is_result['gene'].unique().tolist()
+        else:
+            keepgenes = self.dataset.gene_id
+
+        result = np.hstack([self.normdf[x]['normarr'] for x in keepgenes])
+
+        keep_trans_indices = reduce(lambda x,y: x+y, [self.normdf[x]['indices'] for x in keepgenes])
+        result_trans = self.dataset.transcript_id[keep_trans_indices]
+        result_entrez = self.dataset.gene_id[keep_trans_indices]
+
+        tiuds = self.dataset.__copy__()
+        tiuds.ts[0] = result
+        tiuds.timeserieslist = result
+        tiuds.gene_id = result_entrez
+        tiuds.transcript_id = result_trans
+        tiuds.timepts = self.dataset.timepts
+        tiuds.reps1 = self.dataset.reps1
+
+        return tiuds

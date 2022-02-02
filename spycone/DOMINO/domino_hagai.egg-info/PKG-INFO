@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: domino-hagai
+Version: 0.1
+Summary: DOMINO: Discovery of Modules In Networks using Omic
+Home-page: https://github.com/Shamir-Lab/DOMINO
+Author: Hagai Levi
+Author-email: hagai.levi.007@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3.6
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Linux
