@@ -91,8 +91,8 @@ def setup_package():
     cmdclass = {}
     ext_modules = []
     ext_modules += [
-        Extension("spycone._clustering.similarities", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()]),
-        Extension("spycone._iso_function._iso_fast", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()]),
+        #Extension("spycone._clustering.similarities", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()]),
+        #Extension("spycone._iso_function._iso_fast", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()]),
         Extension("spycone._connectivity.connectivity_task", ["spycone/_connectivity/connectivity_task.c"],include_dirs = [numpy.get_include()]),
         Extension("spycone._shuffle.shuffle", ["spycone/_shuffle/shuffle.c"],include_dirs = [numpy.get_include()]),
     ]
