@@ -272,7 +272,7 @@ def run_domino(target, name=None, is_results=None, scores = None, network_file =
 
         print("---------Network enrichment Result---------\n")
         for u,v in a.items():
-            for e, vv in enumerate(v[0]):
-                print(f"Cluster {u} Module {e} has {len(vv)} nodes.")
+            #for e, vv in enumerate(v[0]):
+            print(f"Cluster {u} found {len(v[0])} module(s).")
         print("-----END-----")        
         return a 

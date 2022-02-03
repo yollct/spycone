@@ -130,12 +130,9 @@ class clustering(clusterObj):
         """
         t1 = time.time()
         
-        if self.input_type == "transcript_expression":
+        if self.input_type == "expression":
             alltimeseriesobjects = np.array(self.DataSet.timeserieslist, dtype="double")
             gene_id = self.DataSet.gene_id
-        elif self.input_type == "gene_expression":
-            alltimeseriesobjects = np.array(self.DataSet.genelevel_expression, dtype="double")
-            gene_id = self.DataSet.genelevel_id
         else:
             try:
                 alltimeseriesobjects = np.array(self.DataSet.tiu_timeserieslist, dtype="double")
@@ -226,12 +223,9 @@ class clustering(clusterObj):
 
 
     def _map_clusters(self, clusterlabel):
-        if self.input_type == "transcript_expression":
+        if self.input_type == "expression":
             genelist = self.DataSet.gene_id
             symbol = self.DataSet.symbs
-        elif self.input_type == "gene_expression":
-            genelist = self.DataSet.genelevel_id
-            symbol = self.DataSet.genelevel_symb
         else:
             genelist = self.DataSet.tiu_gene_id
             symbol = self.DataSet.tiu_symbs
