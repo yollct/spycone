@@ -6,7 +6,7 @@ import warnings
 
 from ..DataSet import DataSet
 from ..BioNetwork import BioNetwork
-from .._clustering import similarities
+from .._clustering.similarities import intra_clusters_similarity
 from .._prototype.prototype_builder import _prototype_builder
 from .._iso_function._iso import _iso_switch_between_arrays
 
@@ -56,7 +56,7 @@ class featuresObj():
 
     def _cluster_average_similarity(self) -> np.ndarray:
         if self.feature_type == "clusters":
-            values = similarities.intra_clusters_similarity(self.testobject.timeserieslist, self.testobject.clusterobj.index_clusters, self.testobject.clusterobj._prototype, self.testobject.clusterobj.metric)
+            values = intra_clusters_similarity(self.testobject.timeserieslist, self.testobject.clusterobj.index_clusters, self.testobject.clusterobj._prototype, self.testobject.clusterobj.metric)
 
             values = np.array(values)
             return values
@@ -65,7 +65,7 @@ class featuresObj():
             timeseries_object = self.timeserieslist
             clusters = self.testobject.clusterobj.index_clusters
 
-            all_score = similarities.intra_clusters_similarity(timeseries_object, clusters, self.testobject.clusterobj._prototype, self.testobject.clusterobj.metric)
+            all_score = intra_clusters_similarity(timeseries_object, clusters, self.testobject.clusterobj._prototype, self.testobject.clusterobj.metric)
 
             values = all_score
             return values
