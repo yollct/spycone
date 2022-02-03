@@ -5,6 +5,8 @@ import pandas as pd
 import scipy.stats
 import seaborn as sns
 from functools import reduce
+import os
+import pickle
 
 from .DataSet import DataSet
 from .BioNetwork import BioNetwork
@@ -29,11 +31,8 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         titles for each cluster
 
     """
-    if clusterObj.input_type =="transcript_expression":
+    if clusterObj.input_type =="expression":
         alltimeseries = np.array(clusterObj.DataSet.timeserieslist, dtype="double")
-        tp = clusterObj.DataSet.timepts
-    elif clusterObj.input_type == "gene_expression":
-        alltimeseries = np.array(clusterObj.DataSet.genelevel_expression, dtype="double")
         tp = clusterObj.DataSet.timepts
     else:
         try:
@@ -500,7 +499,7 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
         plt.title(f"Cluster {cluster}")
 
 
-def vis_modules(mods, dataset=None, size=5, outputpng=None):
+def vis_modules(mods, dataset, cluster, size=5, outputpng=None):
     ascov = dataset.isoobj.is_result
 
     mapping = dict(zip(dataset.gene_id,dataset.symbs))
@@ -532,47 +531,130 @@ def vis_modules(mods, dataset=None, size=5, outputpng=None):
             return symb
     
     
+    v = mods[cluster]
     
-    for cluster,v in mods.items():
-        nmod = np.sum([True if len(eachmod.nodes) > size else False for eachmod in v[0]])#check the how many modules bigger than the threshold size
-        nrow = (nmod//3)+1 if nmod/3 - nmod//3 > 0 else nmod//3
+    nmod = np.sum([True if len(eachmod.nodes) > size else False for eachmod in v[0]])#check the how many modules bigger than the threshold size
+    nrow = (nmod//3)+1 if nmod/3 - nmod//3 > 0 else nmod//3
+    h=nrow*5
+    if nrow==0:
+        nrow=1
+        h=10
+    elif nrow==1:
+        nrow=2
         h=nrow*5
-        if nrow==0:
-            nrow=1
-            h=10
-        elif nrow==1:
-            nrow=2
-            h=nrow*5
-        
-        fig, ax=plt.subplots(nrow, 3, figsize=(h,h))
-        if len(ax.shape)==2:
-            for e,G in enumerate(zip(v[0], [x for vv in ax for x in vv])):
-                if len(G[0].nodes)>size:
-                    colors = list(map(_map_color, G[0].nodes))
-                    nx.draw(G[0], with_labels=True, labels = dict(zip(G[0].nodes, list(map(_map_entrez2symb, G[0].nodes)))), node_color=colors, node_size=300, font_size=10, ax=G[1])
-                # nt.from_nx(G)
-                # nt.show('nx.html')
-                    G[1].set_title(f"cluster {cluster} module {e} : q-val: {v[1][e]}")
-                
-            if outputpng:
-                plt.savefig(f"{outputpng}/modules_clu{cluster}.png", dpi=200, bbox_inches="tight")
-                plt.close()
-            else:
-                plt.axis('off')
-                plt.show()
-            
-
-        else:
-            for e, G in enumerate(zip(v[0], [x for x in ax])):
+    
+    fig, ax=plt.subplots(nrow, 3, figsize=(h,h))
+    if len(ax.shape)==2:
+        for e,G in enumerate(zip(v[0], [x for vv in ax for x in vv])):
+            if len(G[0].nodes)>size:
                 colors = list(map(_map_color, G[0].nodes))
                 nx.draw(G[0], with_labels=True, labels = dict(zip(G[0].nodes, list(map(_map_entrez2symb, G[0].nodes)))), node_color=colors, node_size=300, font_size=10, ax=G[1])
-                G[1].set_title(f"cluster {cluster} module {e}")
-
-            if outputpng:
-                plt.savefig(f"{outputpng}/modules_clu{cluster}.png", dpi=200, bbox_inches="tight")
-                plt.close()
-            else:
-                plt.axis('off')
-                plt.show()
+            # nt.from_nx(G)
+            # nt.show('nx.html')
+                G[1].set_title(f"cluster {cluster} module {e} : q-val: {v[1][e]}")
             
+        if outputpng:
+            plt.savefig(f"{outputpng}/modules_clu{cluster}.png", dpi=200, bbox_inches="tight")
+            plt.close()
+        else:
+            plt.axis('off')
+            plt.show()
+        
+
+    else:
+        for e, G in enumerate(zip(v[0], [x for x in ax])):
+            colors = list(map(_map_color, G[0].nodes))
+            nx.draw(G[0], with_labels=True, labels = dict(zip(G[0].nodes, list(map(_map_entrez2symb, G[0].nodes)))), node_color=colors, node_size=300, font_size=10, ax=G[1])
+            G[1].set_title(f"cluster {cluster} module {e}")
+
+        if outputpng:
+            plt.savefig(f"{outputpng}/modules_clu{cluster}.png", dpi=200, bbox_inches="tight")
+            plt.close()
+        else:
+            plt.axis('off')
+            plt.show()
+
+from pyvis.network import Network
+def _make_html(edges, mapping, ascov, html):
+    isgene = ascov['gene'].unique()
+    nxnet = nx.Graph(list(edges.edges))
+    infile = open(os.path.join("./spycone_pkg/spycone/data/network/network_human_PPIDDI.tab.pkl"),'rb')
+    jointgraph = pickle.load(infile)
+    def map_entrez2symb(x):
+        if x in mapping.keys():
+            symb = mapping[x]
+        else:
+            symb = x
+        return symb
+    mapper = list(map(map_entrez2symb, nxnet.nodes))
+    
+    for e,n in enumerate(nxnet.nodes):
+        nxnet.nodes[n]['label'] = mapper[e]
+        if str(n) in set(isgene):
+            nxnet.nodes[n]['group'] = 1
+        else:
+            nxnet.nodes[n]['group'] = 0
+    
+    ##check if interaction is affected
+    for e, edge in enumerate(nxnet.edges):
+        no1 = edge[0]
+        no2 = edge[1]
+        domain1 = ascov[ascov['gene']==no1][['exclusive_domains']].explode('exclusive_domains').exclusive_domains.unique()
+        domain2 = ascov[ascov['gene']==no2][['exclusive_domains']].explode('exclusive_domains').exclusive_domains.unique()
+
+        dash=False
+        if domain1.shape[0]>0:
+            for do in domain1:
+                try:
+                    checknode = str(no1)+"/"+do
+                    for jointedge in jointgraph.edges:
+                        if jointedge[0] == checknode and str(no2) in jointedge[1]:
+                            dash=True
+                        if jointedge[1] == checknode and str(no2) in jointedge[0]:
+                            dash=True
+                except:
+                    continue
+        
+        if domain2.shape[0]>0:
+            for do in domain2:
+                try:
+                    checknode = str(no2)+"/"+do
+                    for jointedge in jointgraph.edges:
+                        if jointedge[0] == checknode and str(no1) in jointedge[1]:
+                            dash=True
+                        if jointedge[1] == checknode and str(no1) in jointedge[0]:
+                            dash=True
+                except:
+                    continue
+
+        nxnet.edges[edge]['dashes'] = dash
+            
+
+    nt = Network(height="1000px", width="1000px", notebook=True)
+    nt.from_nx(nxnet)
+    nt.options.edges.color.inherit = False
+    nt.options.groups = """{
+        2: {color:{background:'green'}},
+        1: {color:{background:'yellow'}},
+        0: {color:{background:'lightblue'}}
+    }"""
+    nt.show_buttons()
+    nt.show(html)
+
+
+def vis_better_modules(dataset, mod, cluster, dir, module=None):
+    ascov1 = dataset.isoobj.is_result 
+    print(dir)
+    #ascov1['gene'] = list(map(str, list(map(lambda x: int(x) if not np.isnan(x) else x, ascov1['gene']))))
+    mapping = dict(zip(dataset.gene_id, dataset.symbs))
+
+    if module:
+        edges = mod[cluster][0][module]
+        _make_html(edges, mapping, ascov1, f"{dir}modules/c{cluster}m{module}.html")
+    else:
+        mods = mod[cluster][0]
+        for e,v in enumerate(mods):
+            if len(v.nodes)>4:
+                _make_html(v, mapping, ascov1, f"{dir}modules/c{cluster}m{e}.html")
+        
 
