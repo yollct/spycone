@@ -23,8 +23,6 @@ from ._clustering.kmedoids import KMedoids
 from ._clustering.clusterobj import clusterObj
 from ._util_stat import compute_pvalues 
 
-
-
 class clustering(clusterObj):
     """
     Clustering object
