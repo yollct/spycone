@@ -7,7 +7,6 @@ import itertools as it
 
 from ..DataSet import DataSet
 from ..BioNetwork import BioNetwork
-from .._util_stat import compute_pvalues 
 
 
 
