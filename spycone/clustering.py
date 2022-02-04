@@ -17,11 +17,11 @@ from sklearn.metrics import davies_bouldin_score
 from .DataSet import DataSet
 from .BioNetwork import BioNetwork
 from ._prototype.prototype_builder import _prototype_builder
-from ._util_stat.qc import _qc_silhouette
+#from ._util_stat.qc import _qc_silhouette
 from ._clustering.build_cluster import cluster_map_to_item
 from ._clustering.kmedoids import KMedoids
 from ._clustering.clusterobj import clusterObj
-from ._util_stat import compute_pvalues 
+# from ._util_stat import compute_pvalues 
 
 class clustering(clusterObj):
     """
@@ -274,11 +274,11 @@ class clustering(clusterObj):
 
 
 
-    def calculate_pvalue(self, object_type = "clusters", n_permutations=1000, fitness_scores_two_sided = True):
-        cal = compute_pvalues.basic_pvalue(testobject=self.DataSet, object_type = object_type, n_permutations = n_permutations, fitness_scores_two_sided = fitness_scores_two_sided)
-        pval = cal.do_calculate()
+    # def calculate_pvalue(self, object_type = "clusters", n_permutations=1000, fitness_scores_two_sided = True):
+    #     cal = compute_pvalues.basic_pvalue(testobject=self.DataSet, object_type = object_type, n_permutations = n_permutations, fitness_scores_two_sided = fitness_scores_two_sided)
+    #     pval = cal.do_calculate()
 
-        self.cluster_pvalues = np.array(pval)
+    #     self.cluster_pvalues = np.array(pval)
         
-        return np.array(pval)
+    #     return np.array(pval)
         #fitness_scores.append()

@@ -13,7 +13,6 @@ from .._feature import get_features as fea
 from .._fitness.fitness_score import fitness_score
 from .._shuffle import shuffle
 
-from ..iso import iso_function
 from .. import clustering
 
 class basic_pvalue():
@@ -105,7 +104,8 @@ class basic_pvalue():
             corrdf = iso.detect_isoform_switch(filtering=False, min_diff=self.testobject.isoobj.min_diff, corr_cutoff=self.testobject.isoobj.corr_cutoff, event_im_cutoff=self.testobject.isoobj.event_im_cutoff)
             self.testobject = iso.total_isoform_usage(corrdf)
             shuffle_clu = clustering.clustering(self.testobject, input_type="isoformusage", algorithm=self.testobject.clusterobj.algorithm, metric=self.testobject.clusterobj.metric, linkage=self.testobject.clusterobj.linkage, n_clusters=self.testobject.clusterobj.n_clusters)
-            
+
+
             if self.object_type=="clusters":
                 permuted_features = fea.featuresObj(testobject=self.testobject, timeserieslist=shuffle1, feature_type = "clusters")
             #calculate fitness for shuffle obj 

@@ -83,7 +83,8 @@ def setup_package():
       'gtfparse', 
       'pybind11==2.1.0',
       'pyvis>=0.1.9', 
-      'joblib'])
+      'joblib',
+      'nease'])
   
     import numpy
     from Cython.Build import cythonize

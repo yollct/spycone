@@ -13,7 +13,7 @@ from ..DataSet import DataSet
 from ..BioNetwork import BioNetwork
 #from similarity.calculate_similarities import calculate_similarities_timeseriesobj_to_medoid, calculate_similarities_clusterobject, calculate_center_medoid
 from .._prototype.prototype_builder import _prototype_builder
-from .._util_stat.qc import _qc_silhouette
+from ....archive.qc import _qc_silhouette
 from ..clustering import clustering
 from .build_cluster import _add_obj_to_most_sim_cluster, cluster_map_to_item, merge_above_similarity_threshold_clusters
 from .clusterobj import clusterObj
