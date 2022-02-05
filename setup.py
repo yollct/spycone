@@ -57,14 +57,13 @@ def setup_package():
     license='GPLv3',
     classifiers=[
       "Programming Language :: Python :: 3",
-      "Programming Language :: Python :: 3.8",
+      "Programming Language :: Python :: 3.7",
       "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
       "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     packages=find_packages(),
     include_package_data=True,
-    python_requires='>=3.8',
-    setup_requires=['pybind11>=2.1.0'],
+    python_requires='>=3.7',
     install_requires=[
       'pandas>=1.0.1',
       'numpy>=1.18.1',
@@ -81,7 +80,6 @@ def setup_package():
       'plotly>=4.14.3',
       'biopython',
       'gtfparse', 
-      'pybind11==2.1.0',
       'pyvis>=0.1.9', 
       'joblib',
       'nease'])

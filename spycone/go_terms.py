@@ -21,7 +21,7 @@ from .BioNetwork import BioNetwork
 from ._clustering.clusterobj import clusterObj
 
 sys.path.insert(0, os.path.abspath('./_NEASE/nease/'))
-import nease
+from ._NEASE.nease import nease
 
 # Disable
 def _blockPrint():
