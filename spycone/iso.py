@@ -282,7 +282,44 @@ class iso_function():
             intervals.append(np.min([newsp[i+1]-newsp[i], newsp[i+2]-newsp[i+1]]))
         return intervals
 
-    
+    def _iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2, rep_agree):
+        ab = np.sign(arr1-arr2)
+
+        ##look for switch points
+        points=[[x for x in range(ab.shape[1]) if ab[r,x] != np.roll(ab[r], 1)[x] and x!=0] for r in range(ab.shape[0])]
+
+        #points: switch points of all replicates
+        ##check if all r have switch points
+        #then take the points where all appeared
+        def multiple_intersect(points):
+            return np.unique(list(reduce(lambda x, y: set(x).intersection(set(y)), points)))
+
+        #calculate differences
+        #[(abs(a[x-1] - a[x]) + abs(b[x-1] -b[x]))/2 for x in points], a,b
+        
+        if any(points):
+            final_sp = multiple_intersect(points) 
+            if not any(final_sp):
+                final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,rep_agree)]
+                final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
+                if not any(final_sp):
+                    final_sp = reduce(lambda x,y : x+y, points)
+        
+
+            final_sp = np.sort(final_sp)
+            # mean of max difference at the time points between 2 arrays for all replicates
+            allsp_diff = [np.mean([np.max([abs(arr1[r,x-1] - arr2[r,x-1]), abs(arr2[r,x] -arr1[r,x])]) for r in range(arr1.shape[0])]) for x in final_sp]
+            
+        else:
+            final_sp = []
+            allsp_diff=[]
+
+        #calculate corr
+        cors = [(1-np.corrcoef(orgarr1[r], orgarr2[r])[0,1])/2 for r in range(arr1.shape[0])]
+        
+        #for each switch point, the max switch diff before and after 
+        #allsp : all the before and after switch differences for all switch points
+        return len(final_sp)/arr1.shape[1], allsp_diff, final_sp, np.mean(cors)
 
     def _event_enrichness(self, normdf, sp, arr1, arr2):
         ##penalize low expressed genes
@@ -291,12 +328,6 @@ class iso_function():
 
         return np.mean(np.append(penal1[sp-1:sp+1],penal2[sp-1:sp+1]))
 
-    def _zaka_event_enrichness(self, normdf, sp, arr1, arr2):
-        ##penalize low expressed genes
-        penal1 = np.mean([arr1[r]/np.max(normdf[r],axis=0) for r in range(normdf.shape[0])],axis=0)
-        penal2 = np.mean([arr2[r]/np.max(normdf[r],axis=0) for r in range(normdf.shape[0])],axis=0)
-
-        return np.mean(np.append(penal1[sp-1:sp+1],penal2[sp-1:sp+1]))
         
     def _remove_low_expressed(self):
         #return isoform indices
@@ -400,7 +431,7 @@ class iso_function():
         corr_list = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         enrichness = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         all_switch_point = [[] for _ in range(thisnormdf.shape[1])]
-
+        rep_agree = round(self.dataset.reps1*0.6)
         #check for all pairs
         for maj in range(thisnormdf.shape[1]):
             orgarr1 = thisexp[:,maj,:] 
@@ -416,7 +447,7 @@ class iso_function():
                 orgarr2 = thisexp[:,x,:]
 
                 ##finding switch points, correlation
-                iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = _iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
+                iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2, rep_agree)
 
                 ##calculate diff. value, p-values
                 iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
