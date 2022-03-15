@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from collections import defaultdict
-from scipy.stats import ttest_ind
+from scipy.stats import ttest_ind, mannwhitneyu
 from scipy.stats import chi2
 import warnings
 from functools import reduce
@@ -15,9 +15,16 @@ from .BioNetwork import BioNetwork
 from ._iso_function._iso import _iso_switch_between_arrays
 #from ...archive.qc import plot_silhouette
 from ._util_stat.multipletesting import pvalue_correction
-from ._feature import featuresObj as fea
+from ._feature import featuresObj 
 from .clustering import clustering
-from ._shuffle import shuffle
+from ._shuffle import shuffling
+# Disable
+def _blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+
+# Restore
+def _enablePrint():
+    sys.stdout = sys.__stdout__
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -108,7 +115,7 @@ class basic_pvalue():
             timeserieslist = self.testobject.timeserieslist
             #get features of clusters
             print("Calculating features.")
-            features_original = fea.featuresObj(self.testobject, timeserieslist, feature_type="clusters")
+            features_original = featuresObj(self.testobject, timeserieslist, feature_type="clusters")
             #get fitness of clusters
             print("Calculating fitness score.")
             original_fitness_score = features_original.feature_store
@@ -124,7 +131,7 @@ class basic_pvalue():
         if self.object_type == "iso_pairs":
             n_object = len(self.testobject.isoobj.isopairs['major_transcript'])
             timeserieslist = self.testobject.timeserieslist
-            features_original = fea.featuresObj(self.testobject, timeserieslist, feature_type="iso_pairs")
+            features_original = featuresObj(self.testobject, timeserieslist, feature_type="iso_pairs")
             original_fitness_score = features_original.feature_store
             permuted_fitness = np.zeros((original_fitness_score.shape[0], n_object))
  
@@ -138,7 +145,8 @@ class basic_pvalue():
 
         #def _cal_permutations(p):
         for p in self.progressbar(it=range(self.n_permutations), prefix="Permutation:", size=self.n_permutations/10):
-            shuffleObj = shuffle.shuffling(timeserieslist)
+            _blockPrint()
+            shuffleObj = shuffling(timeserieslist=timeserieslist)
             shuffle1 = np.array(shuffleObj.shuffle_dataset_rowwise(), dtype="double")
 
             self.testobject.timeserieslist = shuffle1 ##reassign testobject time series to the shuffled dataset
@@ -150,13 +158,13 @@ class basic_pvalue():
 
 
             if self.object_type=="clusters":
-                permuted_features = fea.featuresObj(testobject=self.testobject, timeserieslist=shuffle1, feature_type = "clusters")
+                permuted_features = featuresObj(testobject=self.testobject, timeserieslist=shuffle1, feature_type = "clusters")
             #calculate fitness for shuffle obj 
                 permuted_fitness = permuted_features.feature_store
 
 
             elif self.object_type=="iso_pairs":
-                permuted_features = fea.featuresObj(testobject=self.testobject, timeserieslist = shuffle1, feature_type="shuffle_iso_pairs")
+                permuted_features = featuresObj(testobject=self.testobject, timeserieslist = shuffle1, feature_type="shuffle_iso_pairs")
                 permuted_fitness = permuted_features.feature_store
 
             
@@ -177,7 +185,8 @@ class basic_pvalue():
                     batch_comp[fs][o] += 1
 
             p+=1
-            time.sleep(0.1)
+            _enablePrint()
+           
 
         #res = Parallel(backend="multiprocessing") (delayed(_cal_permutations)(int(p)) for p in self.progressbar(it=range(self.n_permutations), prefix="Permutation:", size=self.n_permutations/10))
         #print(res)
@@ -345,15 +354,15 @@ class iso_function():
 
             for bp, pt in enumerate(switch_points):
                 if interv[bp] == 1:
-                    iso1_pval = ttest_ind(arr1[:,pt-1], arr1[:,pt])
-                    iso2_pval = ttest_ind(arr2[:,pt-1], arr2[:,pt])
-                    thisdiff = min(abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt])))
+                    iso1_pval = mannwhitneyu(arr1[:,pt-1], arr1[:,pt])
+                    iso2_pval = mannwhitneyu(arr2[:,pt-1], arr2[:,pt])
+                    thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
                     thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
                 else:
-                    iso1_pval = ttest_ind(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
-                    iso2_pval = ttest_ind(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
-                    thisdiff = min(abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))) 
+                    iso1_pval = mannwhitneyu(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                    iso2_pval = mannwhitneyu(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                    thisdiff = np.mean([abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))]) 
                     thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
                 if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
@@ -387,9 +396,10 @@ class iso_function():
         iso_diff_value = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         maj_pval = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         min_pval = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
-        final_spp = [[] for _ in range(thisnormdf.shape[1])]
+        best_switch_point = [[] for _ in range(thisnormdf.shape[1])]
         corr_list = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         enrichness = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        all_switch_point = [[] for _ in range(thisnormdf.shape[1])]
 
         #check for all pairs
         for maj in range(thisnormdf.shape[1]):
@@ -398,7 +408,8 @@ class iso_function():
             for x in range(thisnormdf.shape[1]): #each minor transcript
                 if x == maj:
                     iso_ratio[maj, x], iso_diff_value[maj, x] = 0, 0
-                    final_spp[maj].append(0)
+                    best_switch_point[maj].append(0)
+                    all_switch_point[maj].append(0)
                     corr_list[maj, x] = 0
                     continue
                 arr2 = thisnormdf[:,x,:]
@@ -409,10 +420,11 @@ class iso_function():
 
                 ##calculate diff. value, p-values
                 iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
-                final_spp[maj].append(bs)
+                best_switch_point[maj].append(bs)
+                all_switch_point[maj].append(final_sp)
 
 
-        return iso_ratio, maj_pval, min_pval, iso_diff_value, final_spp, corr_list, enrichness
+        return iso_ratio, maj_pval, min_pval, iso_diff_value, best_switch_point, corr_list, enrichness, all_switch_point
 
 
     def _correlation_coef(self, thisnormdf, maj):
@@ -574,11 +586,12 @@ class iso_function():
                             iso_pairs_id['min_pval'].append(res_maj[2][ids1, ids2])
                             iso_pairs_id['p_value'].append(self._combine_pvals([res_maj[0][ids1,ids2], res_maj[1][ids1, ids2]]))
                             iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
-                            iso_pairs_id['final_sp'].append(res_maj[4][ids1][ids2])
+                            iso_pairs_id['best_switch_point'].append(res_maj[4][ids1][ids2])
                             iso_pairs_id['event_importance'].append(res_maj[6][ids1][ids2])
                             iso_pairs_id['gain_exons'].append(gain_exons)
                             iso_pairs_id['loss_exons'].append(loss_exons)
                             iso_pairs_id['constant_exons'].append(nondiff)
+                            iso_pairs_id['all_switch_points'].append(res_maj[7][ids1][ids2])
 
                             iso_dict_info[self.transcript_id[idxs[ids1]]] = (gene, ids1)
                             iso_dict_info[self.transcript_id[idxs[ids2]]] = (gene, ids2)
@@ -615,11 +628,12 @@ class iso_function():
                             iso_pairs_id['iso_ratio'].append(iso_ratio)
                             iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
                             iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
-                            iso_pairs_id['final_sp'].append(res_maj[4][ids1][ids2])
+                            iso_pairs_id['best_switch_point'].append(res_maj[4][ids1][ids2])
                             iso_pairs_id['event_importance'].append(res_maj[6][ids1][ids2])
                             iso_pairs_id['gain_exons'].append(gain_exons)
                             iso_pairs_id['loss_exons'].append(loss_exons)
                             iso_pairs_id['constant_exons'].append(nondiff)
+                            iso_pairs_id['all_switch_points'].append(res_maj[7][ids1][ids2])
 
                             iso_dict_info[self.transcript_id[idxs[ids1]]] = (gene, ids1)
                             iso_dict_info[self.transcript_id[idxs[ids2]]] = (gene, ids2)
@@ -630,6 +644,7 @@ class iso_function():
 
         self.isopairs = iso_pairs_id
         self.iso_dict_info = iso_dict_info
+        self.dataset.isoobj = self
 
         if self.dataset.reps1 == 1:
             cal = basic_pvalue(testobject=self.dataset, object_type="iso_pairs", n_permutations = n_permutations)
@@ -643,7 +658,7 @@ class iso_function():
         res['adj_pval'] = mct.corrected_pvals
 
         res = res[(res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
-
+        res = res.drop_duplicates(['major_transcript', 'minor_transcript'])
         print("----Result statistics----")
         print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
         print(f"Events found: {res.shape[0]}")
