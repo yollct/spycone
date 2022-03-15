@@ -12,7 +12,6 @@ from collections import defaultdict
 
 from .DataSet import DataSet
 from .BioNetwork import BioNetwork
-from ._iso_function._iso import _iso_switch_between_arrays
 #from ...archive.qc import plot_silhouette
 from ._util_stat.multipletesting import pvalue_correction
 from ._feature import featuresObj 
@@ -282,7 +281,7 @@ class iso_function():
             intervals.append(np.min([newsp[i+1]-newsp[i], newsp[i+2]-newsp[i+1]]))
         return intervals
 
-    def _iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2, rep_agree):
+    def _iso_switch_between_arrays(self, arr1, arr2, orgarr1, orgarr2):
         ab = np.sign(arr1-arr2)
 
         ##look for switch points
@@ -296,7 +295,7 @@ class iso_function():
 
         #calculate differences
         #[(abs(a[x-1] - a[x]) + abs(b[x-1] -b[x]))/2 for x in points], a,b
-        
+        rep_agree = round(self.dataset.resp1*0.6)
         if any(points):
             final_sp = multiple_intersect(points) 
             if not any(final_sp):
@@ -431,7 +430,7 @@ class iso_function():
         corr_list = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         enrichness = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         all_switch_point = [[] for _ in range(thisnormdf.shape[1])]
-        rep_agree = round(self.dataset.reps1*0.6)
+
         #check for all pairs
         for maj in range(thisnormdf.shape[1]):
             orgarr1 = thisexp[:,maj,:] 
@@ -447,7 +446,7 @@ class iso_function():
                 orgarr2 = thisexp[:,x,:]
 
                 ##finding switch points, correlation
-                iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2, rep_agree)
+                iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
 
                 ##calculate diff. value, p-values
                 iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
