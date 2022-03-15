@@ -302,7 +302,7 @@ class iso_function():
                 final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,rep_agree)]
                 final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
                 if not any(final_sp):
-                    final_sp = reduce(lambda x,y : x+y, points)
+                    final_sp = []
         
 
             final_sp = np.sort(final_sp)
@@ -374,35 +374,38 @@ class iso_function():
     def _diff_before_after_switch(self, normdf, arr1, arr2, allsp_diff, switch_points):
         if self.dataset.reps1>1:
             #get the intervals between time points
-            interv = self._take_interval(switch_points)
-            #the best sp has the highest mean differences before and after switch points between the two time series 
-            bestpval1=1
-            bestpval2=1
-            finaldiff = 0
-            finalenrich = 0
-            best_switch_point=0
+            if any(switch_points):
+                interv = self._take_interval(switch_points)
+                #the best sp has the highest mean differences before and after switch points between the two time series 
+                bestpval1=1
+                bestpval2=1
+                finaldiff = 0
+                finalenrich = 0
+                best_switch_point=0
 
-            for bp, pt in enumerate(switch_points):
-                if interv[bp] == 1:
-                    iso1_pval = mannwhitneyu(arr1[:,pt-1], arr1[:,pt])
-                    iso2_pval = mannwhitneyu(arr2[:,pt-1], arr2[:,pt])
-                    thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
-                    thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+                for bp, pt in enumerate(switch_points):
+                    if interv[bp] == 1:
+                        iso1_pval = mannwhitneyu(arr1[:,pt-1], arr1[:,pt])
+                        iso2_pval = mannwhitneyu(arr2[:,pt-1], arr2[:,pt])
+                        thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
+                        thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
-                else:
-                    iso1_pval = mannwhitneyu(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
-                    iso2_pval = mannwhitneyu(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
-                    thisdiff = np.mean([abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))]) 
-                    thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+                    else:
+                        iso1_pval = mannwhitneyu(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                        iso2_pval = mannwhitneyu(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                        thisdiff = np.mean([abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))]) 
+                        thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
-                if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
-                    bestpval1 = iso1_pval[1]
-                    bestpval2 = iso2_pval[1]
-                    finaldiff = thisdiff
-                    finalenrich = thisenrich
-                    best_switch_point=pt
-                
-            return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
+                    if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
+                        bestpval1 = iso1_pval[1]
+                        bestpval2 = iso2_pval[1]
+                        finaldiff = thisdiff
+                        finalenrich = thisenrich
+                        best_switch_point=pt
+                    
+                return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
+            else:
+                return 0, 1, 1, 0, 0
 
         else:             
             #the best sp has the highest mean differences before and after switch points between the two time series 
