@@ -9,7 +9,6 @@ from ..DataSet import DataSet
 from ..BioNetwork import BioNetwork
 from .._clustering.similarities import intra_clusters_similarity
 from .._prototype.prototype_builder import _prototype_builder
-from .._iso_function._iso import _iso_switch_between_arrays
 
 
 ##features "number of objects", "similarity value"
@@ -122,7 +121,7 @@ class featuresObj():
             except:
                 raise ValueError("{},{} doesn't seem valid.".format(iso1,iso2))
            
-            ir, allsp, final_sp, cor = _iso_switch_between_arrays(arr1,arr2,orgarr1,orgarr2)
+            ir, allsp, final_sp, cor = self.testobject.isoobj._iso_switch_between_arrays(arr1,arr2,orgarr1,orgarr2)
             
             if any(allsp):
                 dv = np.max(allsp)
@@ -171,7 +170,7 @@ class featuresObj():
             orgarr1 = groupdict[iso1[0]]['array'][:,iso1[1],:]
             orgarr2 = groupdict[iso2[0]]['array'][:,iso2[1],:]
 
-            ir, allsp, final_sp, cor = _iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
+            ir, allsp, final_sp, cor = self.testobject.isoobj_iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
             if any(allsp):
                 return ir, np.max(allsp), cor
             else:
