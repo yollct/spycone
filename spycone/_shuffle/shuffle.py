@@ -9,7 +9,7 @@ from ..DataSet import DataSet
 from ..BioNetwork import BioNetwork
 
 class shuffling():
-    def __cnit__(self, timeserieslist=None, shuffle_timeseries=None):
+    def __init__(self, timeserieslist=None, shuffle_timeseries=None):
         self.timeserieslist = timeserieslist
         # self.shuffletype = shuffletype
         self.shuffle_timeseries = shuffle_timeseries

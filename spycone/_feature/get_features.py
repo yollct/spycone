@@ -3,6 +3,7 @@ import numpy as np
 import time
 import random
 import warnings
+from joblib import Parallel, delayed
 
 from ..DataSet import DataSet
 from ..BioNetwork import BioNetwork

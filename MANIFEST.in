@@ -1,1 +1,2 @@
 recursive-include  spycone/data  *
+recursive-include  spycone/_NEASE/nease/data *

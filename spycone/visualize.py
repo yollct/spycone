@@ -66,11 +66,12 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     clusters_sns = pd.concat([pd.Series(clusters,name="clusters"),cluster_tsarray], axis=1)
     clusters_sns = pd.melt(clusters_sns, id_vars="clusters",value_vars=cluster_tsarray.columns, value_name="expression",var_name="timepoints", ignore_index=False)
     clusters_sns['gene'] = clusters_sns.index
+    clusters_sns = clusters_sns.reset_index()
 
     #for prototype
     cluster_pro = pd.DataFrame(np.array(list(clusterObj._prototype.values())))
     cluster_pro.columns = ["tp{}".format(x) for x in range(tp)]
-    cluster_pro['clusters'] = list(clusterObj.index_clusters.keys())
+    cluster_pro['clusters'] = list(clusterObj.symbs_clusters.keys())
     cluster_pro = pd.melt(cluster_pro, id_vars='clusters', value_vars=cluster_pro.columns.to_list()[:-1], value_name="expression", var_name="timepoints")
  
     # allsns = pd.concat(cluster_sns_list)
@@ -633,11 +634,10 @@ def _make_html(edges, mapping, ascov, html):
     nt = Network(height="1000px", width="1000px", notebook=True)
     nt.from_nx(nxnet)
     nt.options.edges.color.inherit = False
-    nt.options.groups = """{
-        2: {color:{background:'green'}},
-        1: {color:{background:'yellow'}},
-        0: {color:{background:'lightblue'}}
-    }"""
+    nt.options.groups =  '''{
+                1: {color:{background:'yellow'}},
+                 0: {color:{background:'lightblue'}}
+    }'''
     nt.show_buttons()
     nt.show(html)
 
@@ -650,11 +650,11 @@ def vis_better_modules(dataset, mod, cluster, dir, module=None):
 
     if module:
         edges = mod[cluster][0][module]
-        _make_html(edges, mapping, ascov1, f"{dir}modules/c{cluster}m{module}.html")
+        _make_html(edges, mapping, ascov1, f"{dir}/c{cluster}m{module}.html")
     else:
         mods = mod[cluster][0]
         for e,v in enumerate(mods):
             if len(v.nodes)>4:
-                _make_html(v, mapping, ascov1, f"{dir}modules/c{cluster}m{e}.html")
+                _make_html(v, mapping, ascov1, f"{dir}/c{cluster}m{e}.html")
         
 
