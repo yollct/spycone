@@ -295,7 +295,7 @@ class iso_function():
 
         #calculate differences
         #[(abs(a[x-1] - a[x]) + abs(b[x-1] -b[x]))/2 for x in points], a,b
-        rep_agree = round(self.dataset.resp1*0.6)
+        rep_agree = round(self.dataset.reps1*0.6)
         if any(points):
             final_sp = multiple_intersect(points) 
             if not any(final_sp):
