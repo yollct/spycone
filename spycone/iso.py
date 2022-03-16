@@ -415,7 +415,7 @@ class iso_function():
                         best_switch_point=pt
                     else:
                         continue
-                print(bestpval1, bestpval2)
+
                 return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
             else:
                 return 0, 1, 1, 0, 0
