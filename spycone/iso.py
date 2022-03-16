@@ -378,8 +378,9 @@ class iso_function():
             if any(switch_points):
                 #interv = self._take_interval(switch_points)
                 #the best sp has the highest mean differences before and after switch points between the two time series 
-                bestpval1=[]
-                bestpval2=[]
+                bestpval1=0
+                bestpval2=0
+                allbestp=0
                 finaldiff = 0
                 finalenrich = 0
                 best_switch_point=0
@@ -401,13 +402,20 @@ class iso_function():
                         thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
                     thispt=pt
 
-                    #if (iso1_pval[1] < bestpval1) & (iso2_pval[1] < bestpval2) & (thisenrich > finalenrich):
-                    bestpval1.append(iso1_pval[1])
-                    bestpval2.append(iso2_pval[1])
-                    print(bestpval1)
-                    finaldiff = thisdiff
-                    finalenrich = thisenrich
-                    best_switch_point=pt
+                    if (iso1_pval[1] < allbestp) & (thisenrich > finalenrich):
+                        bestpval1=iso1_pval[1]
+                        bestpval2=iso2_pval[1]
+                        allbestp=iso1_pval[1]
+                        finaldiff = thisdiff
+                        finalenrich = thisenrich
+                        best_switch_point=pt
+                    elif (iso2_pval[1] < allbestp) & (thisenrich > finalenrich):
+                        bestpval1=iso1_pval[1]
+                        bestpval2=iso2_pval[1]
+                        allbestp=iso2_pval[1]
+                        finaldiff = thisdiff
+                        finalenrich = thisenrich
+                        best_switch_point=pt
                     
                 return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
             else:
