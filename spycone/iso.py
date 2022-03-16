@@ -411,6 +411,7 @@ class iso_function():
                     elif (iso2_pval[1] < allbestp) & (thisenrich > finalenrich):
                         bestpval1=iso1_pval[1]
                         bestpval2=iso2_pval[1]
+                        print(bestpval1, bestpval2)
                         allbestp=iso2_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
