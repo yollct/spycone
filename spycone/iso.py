@@ -396,7 +396,7 @@ class iso_function():
                     #     iso2_pval = mannwhitneyu(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
                     #     thisdiff = np.mean([abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))]) 
                     #     thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
-
+                    thispt=pt
                     if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
                         bestpval1 = iso1_pval[1]
                         bestpval2 = iso2_pval[1]
