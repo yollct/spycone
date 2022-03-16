@@ -377,8 +377,8 @@ class iso_function():
             if any(switch_points):
                 #interv = self._take_interval(switch_points)
                 #the best sp has the highest mean differences before and after switch points between the two time series 
-                bestpval1=1
-                bestpval2=1
+                bestpval1=[]
+                bestpval2=[]
                 finaldiff = 0
                 finalenrich = 0
                 best_switch_point=0
@@ -400,12 +400,12 @@ class iso_function():
                         thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
                     thispt=pt
 
-                    if (iso1_pval[1] < bestpval1) & (iso2_pval[1] < bestpval2) & (thisenrich > finalenrich):
-                        bestpval1 = iso1_pval[1]
-                        bestpval2 = iso2_pval[1]
-                        finaldiff = thisdiff
-                        finalenrich = thisenrich
-                        best_switch_point=pt
+                    #if (iso1_pval[1] < bestpval1) & (iso2_pval[1] < bestpval2) & (thisenrich > finalenrich):
+                    bestpval1.append(iso1_pval[1])
+                    bestpval2.append(iso2_pval[1])
+                    finaldiff = thisdiff
+                    finalenrich = thisenrich
+                    best_switch_point=pt
                     
                 return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
             else:
@@ -622,7 +622,7 @@ class iso_function():
                             iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
                             iso_pairs_id['maj_pval'].append(res_maj[1][ids1, ids2])
                             iso_pairs_id['min_pval'].append(res_maj[2][ids1, ids2])
-                            iso_pairs_id['p_value'].append(self._combine_pvals([res_maj[0][ids1,ids2], res_maj[1][ids1, ids2]]))
+                            iso_pairs_id['p_value'].append(self._combine_pvals([res_maj[0][ids1,ids2]+res_maj[1][ids1, ids2]]))
                             iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
                             iso_pairs_id['best_switch_point'].append(res_maj[4][ids1][ids2])
                             iso_pairs_id['event_importance'].append(res_maj[6][ids1][ids2])
