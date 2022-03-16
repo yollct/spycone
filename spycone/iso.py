@@ -459,6 +459,7 @@ class iso_function():
                 print("done1")
                 ##calculate diff. value, p-values
                 iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
+                print("done2")
                 best_switch_point[maj].append(bs)
                 all_switch_point[maj].append(final_sp)
 
