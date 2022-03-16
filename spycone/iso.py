@@ -386,7 +386,7 @@ class iso_function():
                 best_switch_point=0
                 
                 thispt=0 
-
+                print(arr1.shape)
                 for bp, pt in enumerate(switch_points):
                     # if interv[bp] == 1:
                     if len(switch_points) != bp+1:
