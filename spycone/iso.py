@@ -312,6 +312,7 @@ class iso_function():
             final_sp = []
             allsp_diff=[]
 
+        print("here works")
         #calculate corr
         cors = [(1-np.corrcoef(orgarr1[r], orgarr2[r])[0,1])/2 for r in range(arr1.shape[0])]
         
@@ -402,6 +403,7 @@ class iso_function():
                     #if (iso1_pval[1] < bestpval1) & (iso2_pval[1] < bestpval2) & (thisenrich > finalenrich):
                     bestpval1.append(iso1_pval[1])
                     bestpval2.append(iso2_pval[1])
+                    print(bestpval1)
                     finaldiff = thisdiff
                     finalenrich = thisenrich
                     best_switch_point=pt
@@ -454,7 +456,7 @@ class iso_function():
                 ##finding switch points, correlation
                 print(x,maj)
                 iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
-
+                print("done1")
                 ##calculate diff. value, p-values
                 iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
                 best_switch_point[maj].append(bs)
