@@ -632,7 +632,7 @@ class iso_function():
                             iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
                             iso_pairs_id['maj_pval'].append(res_maj[1][ids1, ids2])
                             iso_pairs_id['min_pval'].append(res_maj[2][ids1, ids2])
-                            iso_pairs_id['p_value'].append(self._combine_pvals([res_maj[0][ids1,ids2]+res_maj[1][ids1, ids2]]))
+                            iso_pairs_id['p_value'].append(self._combine_pvals([res_maj[1][ids1,ids2], res_maj[2][ids1, ids2]]))
                             iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
                             iso_pairs_id['best_switch_point'].append(res_maj[4][ids1][ids2])
                             iso_pairs_id['event_importance'].append(res_maj[6][ids1][ids2])
