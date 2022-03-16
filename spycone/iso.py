@@ -389,8 +389,8 @@ class iso_function():
                 for bp, pt in enumerate(switch_points):
                     # if interv[bp] == 1:
                     #if len(switch_points) != bp+1:
-                    iso1_pval = mannwhitneyu(arr1[:,pt].reshape(1,-1)[0], arr1[:,pt+1].reshape(1,-1)[0])
-                    iso2_pval = mannwhitneyu(arr2[:,pt].reshape(1,-1)[0], arr2[:,pt+1].reshape(1,-1)[0])
+                    iso1_pval = mannwhitneyu(arr1[:,pt-1].reshape(1,-1)[0], arr1[:,pt].reshape(1,-1)[0])
+                    iso2_pval = mannwhitneyu(arr2[:,pt-1].reshape(1,-1)[0], arr2[:,pt].reshape(1,-1)[0])
                     thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
                     thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
