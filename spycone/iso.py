@@ -402,20 +402,19 @@ class iso_function():
                     thispt=pt
 
                     if (iso1_pval[1] < allbestp) & (thisenrich > finalenrich):
-                        bestpval1=iso1_pval[1]
-                        bestpval2=iso2_pval[1]
+                        bestpval1, bestpval2=iso1_pval[1], iso2_pval[1]
                         allbestp=iso1_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
                         best_switch_point=pt
                     elif (iso2_pval[1] < allbestp) & (thisenrich > finalenrich):
-                        bestpval1=iso1_pval[1]
-                        bestpval2=iso2_pval[1]
-                        print(bestpval1, bestpval2)
+                        bestpval1, bestpval2=iso1_pval[1], iso2_pval[1]
                         allbestp=iso2_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
                         best_switch_point=pt
+                    else:
+                        continue
                     
                 return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
             else:
