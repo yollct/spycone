@@ -400,7 +400,7 @@ class iso_function():
                         thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
                     thispt=pt
 
-                    if (iso1_pval[1] < bestpval1) & (iso2_pval[1] < bestpval2) & (thisenrich > finalenrich):
+                    if (iso1_pval[1] < 0.05) & (iso2_pval[1] < 0.05) & (thisenrich > finalenrich):
                         bestpval1 = iso1_pval[1]
                         bestpval2 = iso2_pval[1]
                         finaldiff = thisdiff
