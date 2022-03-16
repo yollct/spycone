@@ -375,26 +375,27 @@ class iso_function():
         if self.dataset.reps1>1:
             #get the intervals between time points
             if any(switch_points):
-                interv = self._take_interval(switch_points)
+                #interv = self._take_interval(switch_points)
                 #the best sp has the highest mean differences before and after switch points between the two time series 
                 bestpval1=1
                 bestpval2=1
                 finaldiff = 0
                 finalenrich = 0
                 best_switch_point=0
-
+                
+                thispt=0 
                 for bp, pt in enumerate(switch_points):
-                    if interv[bp] == 1:
-                        iso1_pval = mannwhitneyu(arr1[:,pt-1], arr1[:,pt])
-                        iso2_pval = mannwhitneyu(arr2[:,pt-1], arr2[:,pt])
-                        thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
-                        thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+                    # if interv[bp] == 1:
+                    iso1_pval = mannwhitneyu(arr1[:,thispt:pt], arr1[:,pt:switch_points[bp+1]])
+                    iso2_pval = mannwhitneyu(arr2[:,thispt:pt], arr2[:,pt:switch_points[bp+1]])
+                    thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
+                    thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
-                    else:
-                        iso1_pval = mannwhitneyu(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
-                        iso2_pval = mannwhitneyu(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
-                        thisdiff = np.mean([abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))]) 
-                        thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+                    # else:
+                    #     iso1_pval = mannwhitneyu(arr1[:,pt-interv[bp]:pt].reshape(1,-1), arr1[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                    #     iso2_pval = mannwhitneyu(arr2[:,pt-interv[bp]:pt].reshape(1,-1), arr2[:,pt:pt+interv[bp]].reshape(1,-1), axis=1)
+                    #     thisdiff = np.mean([abs(np.mean(arr1[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr1[:,pt:pt+interv[bp]].reshape(1,-1)))), abs(np.mean(arr2[:,pt-interv[bp]:pt].reshape(1,-1) - np.mean(arr2[:,pt:pt+interv[bp]].reshape(1,-1))))]) 
+                    #     thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
 
                     if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
                         bestpval1 = iso1_pval[1]
