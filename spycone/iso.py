@@ -374,7 +374,6 @@ class iso_function():
     def _diff_before_after_switch(self, normdf, arr1, arr2, allsp_diff, switch_points):
         if self.dataset.reps1>1:
             #get the intervals between time points
-            print(switch_points)
             if any(switch_points):
                 #interv = self._take_interval(switch_points)
                 #the best sp has the highest mean differences before and after switch points between the two time series 
@@ -405,7 +404,6 @@ class iso_function():
                     if (iso1_pval[1] < allbestp) & (thisenrich > finalenrich):
                         bestpval1=iso1_pval[1]
                         bestpval2=iso2_pval[1]
-                        print(bestpval1)
                         allbestp=iso1_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
@@ -604,7 +602,7 @@ class iso_function():
             thisnormdf = values['normarr']
             thisexp = values['array']
 
-            print(gene)
+            
             # maj = np.argmax(np.median(np.median(thisexp, axis=0), axis=1))
             # secondmaj = None
             # if thisnormdf.shape[1] > 2:
