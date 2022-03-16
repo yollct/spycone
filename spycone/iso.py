@@ -453,6 +453,7 @@ class iso_function():
                 orgarr2 = thisexp[:,x,:]
 
                 ##finding switch points, correlation
+                print(x,maj)
                 iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
 
                 ##calculate diff. value, p-values
@@ -591,7 +592,7 @@ class iso_function():
             thisnormdf = values['normarr']
             thisexp = values['array']
 
-
+            print(gene)
             # maj = np.argmax(np.median(np.median(thisexp, axis=0), axis=1))
             # secondmaj = None
             # if thisnormdf.shape[1] > 2:
