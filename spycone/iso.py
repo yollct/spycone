@@ -286,7 +286,6 @@ class iso_function():
 
         ##look for switch points
         points=[[x for x in range(ab.shape[1]) if ab[r,x] != np.roll(ab[r], 1)[x] and x!=0] for r in range(ab.shape[0])]
-        print(points)
         #points: switch points of all replicates
         ##check if all r have switch points
         #then take the points where all appeared
