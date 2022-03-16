@@ -399,7 +399,7 @@ class iso_function():
                         thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
                         thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
                     thispt=pt
-                    if iso1_pval[1] < bestpval1 and iso2_pval[1] < bestpval2 and thisenrich > finalenrich:
+                    if (iso1_pval[1] < bestpval1) & (iso2_pval[1] < bestpval2) & (thisenrich > finalenrich):
                         bestpval1 = iso1_pval[1]
                         bestpval2 = iso2_pval[1]
                         finaldiff = thisdiff
