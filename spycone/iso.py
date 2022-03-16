@@ -380,7 +380,7 @@ class iso_function():
                 #the best sp has the highest mean differences before and after switch points between the two time series 
                 bestpval1=0
                 bestpval2=0
-                allbestp=0
+                allbestp=1
                 finaldiff = 0
                 finalenrich = 0
                 best_switch_point=0
@@ -405,6 +405,7 @@ class iso_function():
                     if (iso1_pval[1] < allbestp) & (thisenrich > finalenrich):
                         bestpval1=iso1_pval[1]
                         bestpval2=iso2_pval[1]
+                        print(bestpval1)
                         allbestp=iso1_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
