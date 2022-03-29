@@ -151,9 +151,9 @@ class basic_pvalue():
             self.testobject.timeserieslist = shuffle1 ##reassign testobject time series to the shuffled dataset
             #calculate features for shuffle obj
             iso = iso_function(self.testobject)
-            corrdf = iso.detect_isoform_switch(filtering=False, min_diff=self.testobject.isoobj.min_diff, corr_cutoff=self.testobject.isoobj.corr_cutoff, event_im_cutoff=self.testobject.isoobj.event_im_cutoff)
-            self.testobject = iso.total_isoform_usage(corrdf)
-            shuffle_clu = clustering.clustering(self.testobject, input_type="isoformusage", algorithm=self.testobject.clusterobj.algorithm, metric=self.testobject.clusterobj.metric, linkage=self.testobject.clusterobj.linkage, n_clusters=self.testobject.clusterobj.n_clusters)
+            #corrdf = iso.detect_isoform_switch(filtering=False, min_diff=self.testobject.isoobj.min_diff, corr_cutoff=self.testobject.isoobj.corr_cutoff, event_im_cutoff=self.testobject.isoobj.event_im_cutoff)
+            #self.testobject = iso.total_isoform_usage(corrdf)
+            #shuffle_clu = clustering.clustering(self.testobject, input_type="isoformusage", algorithm=self.testobject.clusterobj.algorithm, metric=self.testobject.clusterobj.metric, linkage=self.testobject.clusterobj.linkage, n_clusters=self.testobject.clusterobj.n_clusters)
 
 
             if self.object_type=="clusters":
@@ -284,41 +284,49 @@ class iso_function():
     def _iso_switch_between_arrays(self, arr1, arr2, orgarr1, orgarr2):
         ab = np.sign(arr1-arr2)
 
+        if self.dataset.reps1 ==1:
+            points = [x for x in range(1, ab.shape[1]) if (ab[0][x] != np.roll(ab[0], 1)[x])]
+            final_sp=points
+            allsp_diff =[np.mean([abs(arr1[:,x-1] - arr2[:,x-1]), abs(arr2[:,x] -arr1[:,x])]) for x in final_sp]
+            cors = (1-np.corrcoef(orgarr1, orgarr2)[0,1])/2
+            iso_ratio=len(final_sp)/arr1.shape[0]
+        else:
         ##look for switch points
-        points=[[x for x in range(ab.shape[1]) if ab[r,x] != np.roll(ab[r], 1)[x] and x!=0] for r in range(ab.shape[0])]
+            points=[[x for x in range(ab.shape[1]) if ab[r,x] != np.roll(ab[r], 1)[x] and x!=0] for r in range(ab.shape[0])]
         #points: switch points of all replicates
         ##check if all r have switch points
         #then take the points where all appeared
-        def multiple_intersect(points):
-            return np.unique(list(reduce(lambda x, y: set(x).intersection(set(y)), points)))
+            def multiple_intersect(points):
+                return np.unique(list(reduce(lambda x, y: set(x).intersection(set(y)), points)))
 
-        #calculate differences
-        #[(abs(a[x-1] - a[x]) + abs(b[x-1] -b[x]))/2 for x in points], a,b
-        rep_agree = round(self.dataset.reps1*0.6)
-        if any(points):
-            final_sp = multiple_intersect(points) 
-            if not any(final_sp):
-                final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,rep_agree)]
-                final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
+            #calculate differences
+            #[(abs(a[x-1] - a[x]) + abs(b[x-1] -b[x]))/2 for x in points], a,b
+            rep_agree = round(self.dataset.reps1*0.6)
+            if any(points):
+                final_sp = multiple_intersect(points) 
                 if not any(final_sp):
-                    final_sp = []
-        
-
-            final_sp = np.sort(final_sp)
-            # mean of max difference at the time points between 2 arrays for all replicates
-            allsp_diff = [np.mean([np.max([abs(arr1[r,x-1] - arr2[r,x-1]), abs(arr2[r,x] -arr1[r,x])]) for r in range(arr1.shape[0])]) for x in final_sp]
+                    final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,rep_agree)]
+                    final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
+                    if not any(final_sp):
+                        final_sp = []
             
-        else:
-            final_sp = []
-            allsp_diff=[]
+
+                final_sp = np.sort(final_sp)
+                # mean of max difference at the time points between 2 arrays for all replicates
+                allsp_diff = [np.mean([np.max([abs(arr1[r,x-1] - arr2[r,x-1]), abs(arr2[r,x] -arr1[r,x])]) for r in range(arr1.shape[0])]) for x in final_sp]
+                
+            else:
+                final_sp = []
+                allsp_diff=[]
 
         
         #calculate corr
-        cors = [(1-np.corrcoef(orgarr1[r], orgarr2[r])[0,1])/2 for r in range(arr1.shape[0])]
-        
+            cors = [(1-np.corrcoef(orgarr1[r], orgarr2[r])[0,1])/2 for r in range(arr1.shape[0])]
+            iso_ratio = len(final_sp)/arr1.shape[1]
         #for each switch point, the max switch diff before and after 
         #allsp : all the before and after switch differences for all switch points
-        return len(final_sp)/arr1.shape[1], allsp_diff, final_sp, np.mean(cors)
+        return iso_ratio, allsp_diff, final_sp, np.mean(cors)
+
 
     def _event_enrichness(self, normdf, sp, arr1, arr2):
         ##penalize low expressed genes
@@ -372,10 +380,11 @@ class iso_function():
         return intervals
 
     def _diff_before_after_switch(self, normdf, arr1, arr2, allsp_diff, switch_points):
+        tmp_sw =  np.insert(switch_points,0,0)
+        tmp_sw = np.append(tmp_sw, self.dataset.timepts)
         if self.dataset.reps1>1:
             #get the intervals between time points
             if any(switch_points):
-                #interv = self._take_interval(switch_points)
                 #the best sp has the highest mean differences before and after switch points between the two time series 
                 bestpval1=0
                 bestpval2=0
@@ -383,51 +392,50 @@ class iso_function():
                 finaldiff = 0
                 finalenrich = 0
                 best_switch_point=0
+                this_prob = 0
                 
                 thispt=0 
 
-                for bp, pt in enumerate(switch_points):
-                    # if interv[bp] == 1:
+                for bp in range(1, len(tmp_sw)-1):
                     #if len(switch_points) != bp+1:
-                    iso1_pval = mannwhitneyu(arr1[:,pt-1].reshape(1,-1)[0], arr1[:,pt].reshape(1,-1)[0])
-                    iso2_pval = mannwhitneyu(arr2[:,pt-1].reshape(1,-1)[0], arr2[:,pt].reshape(1,-1)[0])
-                    thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
-                    thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
+                    iso1_pval = mannwhitneyu(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0], arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0])
+                    iso2_pval = mannwhitneyu(arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0], arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0])
+                    thisdiff = np.mean([abs(np.mean(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]]) - np.mean(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]])), abs(np.mean(arr2[:,tmp_sw[bp-1]:tmp_sw[bp]]) - np.mean(arr2[:,tmp_sw[bp]:tmp_sw[bp+1]]))])
+                    thisenrich = self._event_enrichness(normdf, tmp_sw[bp], arr1, arr2)
+                    iso_prob = ((np.sum(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]>arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]))/arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0].shape[0]) + ((np.sum(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]<arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]))/(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0].shape[0]))
 
-                    # else:
-                    #     iso1_pval = mannwhitneyu(arr1[:,thispt:pt].reshape(1,-1)[0], arr1[:,pt])
-                    #     iso2_pval = mannwhitneyu(arr2[:,thispt:pt].reshape(1,-1)[0], arr2[:,pt])
-                    #     thisdiff = np.mean([abs(np.mean(arr1[:,pt-1]) - np.mean(arr1[:,pt])), abs(np.mean(arr2[:,pt-1]) - np.mean(arr2[:,pt]))])
-                    #     thisenrich = self._event_enrichness(normdf, pt, arr1, arr2)
-                    thispt=pt
+                    thispt=tmp_sw[bp]
 
                     if (iso1_pval[1] < allbestp) & (thisenrich > finalenrich):
                         bestpval1, bestpval2=iso1_pval[1], iso2_pval[1]
                         allbestp=iso1_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
-                        best_switch_point=pt
+                        best_switch_point=tmp_sw[bp]
+                        this_prob = iso_prob/2
                     elif (iso2_pval[1] < allbestp) & (thisenrich > finalenrich):
                         bestpval1, bestpval2=iso1_pval[1], iso2_pval[1]
                         allbestp=iso2_pval[1]
                         finaldiff = thisdiff
                         finalenrich = thisenrich
-                        best_switch_point=pt
+                        best_switch_point=tmp_sw[bp]
+                        this_prob = iso_prob/2
                     else:
                         continue
 
-                return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich
+                return finaldiff, bestpval1, bestpval2, best_switch_point, finalenrich, this_prob
             else:
-                return 0, 1, 1, 0, 0
+                return 0, 1, 1, 0, 0, 0
 
         else:             
             #the best sp has the highest mean differences before and after switch points between the two time series 
             if any(allsp_diff):
-                bs = np.argmax(allsp_diff)
-                finalenrich = self._event_enrichness(normdf, bs, arr1, arr2)
-                return allsp_diff[bs], 1, 1, switch_points[bs], finalenrich
+                bp = np.argmax(allsp_diff)
+                finalenrich = self._event_enrichness(normdf, bp, arr1, arr2)
+                iso_prob = ((np.sum(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]>arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]))/arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0].shape[0]) + ((np.sum(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]<arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]))/(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0].shape[0]))
+                return allsp_diff[bp], 1, 1, switch_points[bp], finalenrich, iso_prob
             else:
-                return 0,1,1,0,0
+                return 0,1,1,0,0, 0
 
     def _isoform_differential_usage(self, thisnormdf, thisexp):
         #define major transcript
@@ -445,6 +453,7 @@ class iso_function():
         best_switch_point = [[] for _ in range(thisnormdf.shape[1])]
         corr_list = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         enrichness = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
+        iso_prob = np.zeros((thisnormdf.shape[1],thisnormdf.shape[1]))
         all_switch_point = [[] for _ in range(thisnormdf.shape[1])]
 
         #check for all pairs
@@ -466,13 +475,13 @@ class iso_function():
                 iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
           
                 ##calculate diff. value, p-values
-                iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
+                iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x], iso_prob[maj, x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
                 
                 best_switch_point[maj].append(bs)
                 all_switch_point[maj].append(final_sp)
 
 
-        return iso_ratio, maj_pval, min_pval, iso_diff_value, best_switch_point, corr_list, enrichness, all_switch_point
+        return iso_ratio, maj_pval, min_pval, iso_diff_value, best_switch_point, corr_list, enrichness, all_switch_point, iso_prob
 
 
     def _correlation_coef(self, thisnormdf, maj):
@@ -535,7 +544,7 @@ class iso_function():
         return majoriso, minoriso, gain_exons, loss_exons, nondiff
         
                 
-    def detect_isoform_switch(self, combine = "median", filtering = True, filter_cutoff = 1, corr_cutoff=0.5, event_im_cutoff = 0.1, min_diff = 0.05, p_val_cutoff = 0.05, n_permutations=1000, adjustp='fdr_bh', diff_domain=True, norm=True):
+    def detect_isoform_switch(self, filtering = True, prob_cutoff=0.5, corr_cutoff=0.5, event_im_cutoff = 0.1, min_diff = 0.05, p_val_cutoff = 0.05, n_permutations=100, adjustp='fdr_bh', diff_domain=True):
         """
         Detect isoform switching events along time series.
         
@@ -628,7 +637,7 @@ class iso_function():
                             iso_pairs_id['gene_symb'].append(self.symbs[idxs[ids1]])
                             iso_pairs_id['major_transcript'].append(majoriso)
                             iso_pairs_id['minor_transcript'].append(minoriso)
-                            iso_pairs_id['iso_ratio'].append(iso_ratio)
+                            iso_pairs_id['switch_prob'].append(res_maj[8][ids1][ids2])
                             iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
                             iso_pairs_id['maj_pval'].append(res_maj[1][ids1, ids2])
                             iso_pairs_id['min_pval'].append(res_maj[2][ids1, ids2])
@@ -673,7 +682,7 @@ class iso_function():
                             iso_pairs_id['gene_symb'].append(self.symbs[idxs[ids1]])
                             iso_pairs_id['major_transcript'].append(majoriso)
                             iso_pairs_id['minor_transcript'].append(minoriso)
-                            iso_pairs_id['iso_ratio'].append(iso_ratio)
+                            iso_pairs_id['switch_prob'].append(res_maj[8][ids1][ids2])
                             iso_pairs_id['diff'].append(res_maj[3][ids1, ids2])
                             iso_pairs_id['corr'].append(res_maj[5][ids1, ids2])
                             iso_pairs_id['best_switch_point'].append(res_maj[4][ids1][ids2])
@@ -688,7 +697,6 @@ class iso_function():
 
                             if diff_domain == True:
                                 iso_pairs_id['exclusive_domains'].append(self._exclusive_domain(self.transcript_id[idxs[ids1]],self.transcript_id[idxs[ids2]]))
-
 
         self.isopairs = iso_pairs_id
         self.iso_dict_info = iso_dict_info
@@ -705,8 +713,8 @@ class iso_function():
         mct = pvalue_correction(res['p_value'], method=adjustp)
         res['adj_pval'] = mct.corrected_pvals
 
-        res = res[(res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
-        res = res.drop_duplicates(['major_transcript', 'minor_transcript'])
+        res = res[(res['switch_prob']>prob_cutoff) & (res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
+        res = res.sort_values("switch_prob", ascending=False).drop_duplicates(['major_transcript', 'minor_transcript'])
         print("----Result statistics----")
         print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
         print(f"Events found: {res.shape[0]}")

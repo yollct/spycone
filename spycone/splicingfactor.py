@@ -201,7 +201,7 @@ class SF_coexpression():
 
         return sf_iso_df, cluster_sf
 
-def create_motifsobj(gc_ratio=0.4):
+def create_motifsobj():
         ########this only read the consensus
         # motifs_df = pd.read_csv(os.path.join(dir, "sfanalysis/motif_info.csv"), sep="\t")
         # print(motifs_df.head())
@@ -241,11 +241,11 @@ def create_motifsobj(gc_ratio=0.4):
                 if len(bpmotif)==1:          
                     
                     pwm=bpmotif[0].counts.normalize()
-                    background = {"A":(1-gc_ratio)/2,"C":gc_ratio/2,"G":gc_ratio/2,"T":(1-gc_ratio)/2}
-                    pssm=pwm.log_odds(background)
-                    motif_pssm[sf].append([pssm])
+                    # background = {"A":(1-gc_ratio)/2,"C":gc_ratio/2,"G":gc_ratio/2,"T":(1-gc_ratio)/2}
+                    # pssm=pwm.log_odds(background)
+                    motif_pssm[sf].append([pwm])
 
-        with open(os.path.join(dir,"spycone_pkg/spycone/data/motif_pssm.pkl"), "wb") as f:
+        with open(os.path.join(dir,"spycone_pkg/spycone/data/motif_pwm.pkl"), "wb") as f:
             pickle.dump(motif_pssm, f, pickle.HIGHEST_PROTOCOL)
 
         return motif_obj, motif_pssm
@@ -281,8 +281,7 @@ class SF_motifsearch():
         self.dataset = dataset
         self.gtf = gtf
         self.flanking = flanking
-        self.gc_ratio = gc_ratio
-        self.motif_pssm = pickle.load(open(os.path.join(dir_path,"data/motif_pssm.pkl"), "rb"))
+        #self.motif_pssm = pickle.load(open(os.path.join(dir_path,"data/motif_pssm.pkl"), "rb"))
         self.motif_obj = pickle.load(open(os.path.join(dir_path,"data/motif_obj.pkl"), "rb"))
         self.motif_pwm = pickle.load(open(os.path.join(dir_path,"data/motif_pwm.pkl"), "rb"))
         self.motif_thres = pickle.load(open(os.path.join(dir_path,"data/motif_thres.pkl"), "rb"))
@@ -317,20 +316,20 @@ class SF_motifsearch():
 
     def _exon_search(self, exons, sf, site):
         sf_results=defaultdict(list)
-        motifs_pssm = self.motif_pssm[sf]
+        motifs_pwm = self.motif_pwm[sf]
         for exon in exons:
             exon_seq = self.get_seq(exid=exon, site=site)
             if exon_seq is None:
                 continue
             else:
-                for e,pssm in enumerate(motifs_pssm):  
-                    if len(pssm)==1:          
+                for e,pwm in enumerate(motifs_pwm):  
+                    if len(pwm)==1:          
                         test_seq = Seq(exon_seq)
                         submotstr = f'{sf}_{e}'
-                        #gc_ratio = round(GC(test_seq)/100,2)
+                        gc_ratio = round(GC(test_seq)/100,2)
       
-                        # background = {"A":(1-self.gc_ratio)/2,"C":self.gc_ratio/2,"G":self.gc_ratio/2,"T":(1-self.gc_ratio)/2}
-                        # pssm=pwm[0].log_odds(background)
+                        background = {"A":(1-gc_ratio)/2,"C":gc_ratio/2,"G":gc_ratio/2,"T":(1-gc_ratio)/2}
+                        pssm=pwm[0].log_odds(background)
 
                         # distribution = pssm[0].distribution(background=background, precision=10**4)
                         # threshold = distribution.threshold_patser()
@@ -345,7 +344,7 @@ class SF_motifsearch():
                         #     submotstr = f'{sf}_{e}'
                         
                         submotstr = f'{sf}_{e}'
-                        allscores = pssm[0].calculate(test_seq)
+                        allscores = pssm.calculate(test_seq)
                         # if self.motif_thres[submotstr] is not None:
                         #     allscores = pssm[0].search(test_seq, threshold=self.motif_thres[submotstr])
                             
@@ -355,7 +354,7 @@ class SF_motifsearch():
 
                     else:
                         continue
-        
+            gc.collect()
         return sf_results
 
     def _parallel_search(self, sf, exon_dicts, site, bg=False):

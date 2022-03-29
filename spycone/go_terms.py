@@ -57,6 +57,7 @@ def list_gsea(genelist, taxid, gene_sets=None, is_results=None, cutoff=0.05, met
         time.sleep(2)
 
         print("---------Gene Set Enrichment Result---------\n")
+        print(f"Method: {method} Database: {gene_sets}")
         print(f"{len(genelist)} of genes found enriched in {enr_results.shape[0]} terms.")
         print("-----END-----")
         
@@ -93,6 +94,7 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
             time.sleep(2)
 
         print("---------Gene Set Enrichment Result---------\n")
+        print(f"Method: {method} Database: {gene_sets}")
         for u,v in enr_results.items():
             print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]))
         print("-----END-----")
@@ -142,6 +144,7 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
         
         _enablePrint()
         print("---------Gene Set Enrichment Result---------\n")
+        print(f"Method: {method} Database: {gene_sets}")
         for u,v in enr_results.items():
             print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]))
         print("-----END-----")
@@ -165,7 +168,7 @@ def modules_gsea(X, clu, taxid, type="PPI", gene_sets=None, cutoff=0.05, method=
 
     if isinstance(X, list):
         pass
-    
+    _blockPrint()
     for cluster, nets in X.items():
         if len(nets)==0:
             continue
@@ -176,20 +179,26 @@ def modules_gsea(X, clu, taxid, type="PPI", gene_sets=None, cutoff=0.05, method=
                 genelist = [mapping[x.split("/")[0]] for x in list(net.nodes) if x.split("/")[0] in set(mapping.keys())]
             else:
                 genelist = [mapping[x] for x in list(net.nodes) if x in set(mapping.keys())]
-
+                
+            
             enr = gp.enrichr(gene_list = genelist,
                             gene_sets = gene_sets,
                             organism=org_map[taxid],
                             cutoff=cutoff,
                             background=bg[taxid]
                             )
+            
+
             try:
                 enr_results[cluster][m].append(enr.results[enr.results['Adjusted P-value']<cutoff])
             except:
                 continue
+            
         time.sleep(2)
+        _enablePrint()
 
     print("---------Gene Set Enrichment Result---------\n")
+    print(f"Method: {method} Database: {gene_sets}")
     for u,v in enr_results.items():
         for m,vv in v.items():
             print("Cluster {} Module {}".format(u, m)," found enriched in {} terms.".format(vv[0].shape[0]))
