@@ -106,11 +106,12 @@ class featuresObj():
         nisopairs = len(self.testobject.isoobj.isopairs['major_transcript'])
         iso_ratio = np.zeros(nisopairs)
         iso_dict_info = self.testobject.isoobj.iso_dict_info
-
+        print("check1", isopairs)
         def _cal_iso_ratio(n):
         # for n in range(nisopairs):
             iso1 = iso_dict_info[isopairs['major_transcript'][n]]
             iso2 = iso_dict_info[isopairs['minor_transcript'][n]]
+            
 
             try:
                 arr1 = self.testobject.isoobj.normdf[iso1[0]]['normarr'][:,iso1[1],:]
@@ -131,7 +132,7 @@ class featuresObj():
         #
         #parallel run 
         res = Parallel(backend="loky") (delayed(_cal_iso_ratio)(n) for n in range(nisopairs))
-        
+        print("check2", res)
         iso_ratio, diff, corr = map(list,zip(*res))
         return iso_ratio, diff, corr
 
@@ -170,7 +171,7 @@ class featuresObj():
             orgarr1 = groupdict[iso1[0]]['array'][:,iso1[1],:]
             orgarr2 = groupdict[iso2[0]]['array'][:,iso2[1],:]
 
-            ir, allsp, final_sp, cor = self.testobject.isoobj_iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
+            ir, allsp, final_sp, cor = self.testobject.isoobj._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
             if any(allsp):
                 return ir, np.max(allsp), cor
             else:
