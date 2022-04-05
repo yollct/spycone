@@ -3,10 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Spycone - A python package for time series biological data
+Spycone - SPlicing-aware time-COurse Network Enricher
 ============================================================
 
-Spycone is a python package that performs time series data analysis for biological dataset. It also includes analysis for transcript-level time series expression data. 
+Spycone is a python package that provides systematic analysis of time course transcriptomics data. It uses gene or isoform expression and a biological network as an input. It employs the sum of changes of all isoforms relative abundances (total isoform usage) across time points to detect IS events. Spycone further provides downstream analysis such as clustering by total isoform usage, gene set enrichment analysis, network enrichment, and splicing factors analysis. Below we describe the Spycone workflow in detail. . 
+
 
 
 *************
