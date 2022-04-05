@@ -65,7 +65,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 #         #allsp : all the before and after switch differences for all switch points
 #         return len(final_sp)/arr1.shape[1], allsp_diff, final_sp, np.mean(cors)
 class basic_pvalue():
-    def __init__(self, testobject, object_type, iso_switch = True, shuffle=None, fitness_scores = None, fitness_scores_two_sided = True, n_permutations=1000):
+    def __init__(self, testobject, object_type, iso_switch = True, shuffle=None, fitness_scores = None, fitness_scores_two_sided = False, n_permutations=1000):
         self.testobject=testobject ##DataSet
         self.object_type = object_type #connectivity, clusters, iso_pairs
         self.shuffle = shuffle
@@ -118,7 +118,7 @@ class basic_pvalue():
             #get fitness of clusters
             print("Calculating fitness score.")
             original_fitness_score = features_original.feature_store
-            print(original_fitness_score)
+        
 
             #data structure for storing permuted features #[features][permutation]
             permuted_fitness = np.zeros((original_fitness_score.shape[0], n_object))
@@ -145,10 +145,11 @@ class basic_pvalue():
         #def _cal_permutations(p):
         for p in self.progressbar(it=range(self.n_permutations), prefix="Permutation:", size=self.n_permutations/10):
             _blockPrint()
+  
             shuffleObj = shuffling(timeserieslist=timeserieslist)
-            shuffle1 = np.array(shuffleObj.shuffle_dataset_rowwise(), dtype="double")
-
-            self.testobject.timeserieslist = shuffle1 ##reassign testobject time series to the shuffled dataset
+            #shuffle1 = np.array(shuffleObj.shuffle_dataset_rowwise(), dtype="double")
+            #self.testobject.timeserieslist = shuffle1 ##reassign testobject time series to the shuffled dataset
+            
             #calculate features for shuffle obj
             iso = iso_function(self.testobject)
             #corrdf = iso.detect_isoform_switch(filtering=False, min_diff=self.testobject.isoobj.min_diff, corr_cutoff=self.testobject.isoobj.corr_cutoff, event_im_cutoff=self.testobject.isoobj.event_im_cutoff)
@@ -157,13 +158,13 @@ class basic_pvalue():
 
 
             if self.object_type=="clusters":
-                permuted_features = featuresObj(testobject=self.testobject, timeserieslist=shuffle1, feature_type = "clusters")
+                permuted_features = featuresObj(testobject=self.testobject, timeserieslist=timeserieslist, feature_type = "clusters", seed=p)
             #calculate fitness for shuffle obj 
                 permuted_fitness = permuted_features.feature_store
 
 
             elif self.object_type=="iso_pairs":
-                permuted_features = featuresObj(testobject=self.testobject, timeserieslist = shuffle1, feature_type="shuffle_iso_pairs")
+                permuted_features = featuresObj(testobject=self.testobject, timeserieslist = timeserieslist, feature_type="shuffle_iso_pairs", seed=p)
                 permuted_fitness = permuted_features.feature_store
 
             
@@ -435,7 +436,7 @@ class iso_function():
                 iso_prob = ((np.sum(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]>arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]))/arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0].shape[0]) + ((np.sum(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]<arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]))/(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0].shape[0]))
                 return allsp_diff[bp], 1, 1, switch_points[bp], finalenrich, iso_prob
             else:
-                return 0,1,1,0,0, 0
+                return 0,1,1,0,0,0
 
     def _isoform_differential_usage(self, thisnormdf, thisexp):
         #define major transcript

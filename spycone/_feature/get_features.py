@@ -13,12 +13,13 @@ from .._prototype.prototype_builder import _prototype_builder
 
 ##features "number of objects", "similarity value"
 class featuresObj():
-    def __init__(self, testobject, timeserieslist, feature_type=None, feature_store = None, features=["prototype_standard_variance","average_similarity","number_of_object"]):
+    def __init__(self, testobject, timeserieslist, feature_type=None, feature_store = None, features=["prototype_standard_variance","average_similarity","number_of_object"], seed=1234):
         self.features = features #prototypesv, averagesim, noofobj
         self.testobject = testobject
         self.timeserieslist = timeserieslist #np.array
         self.feature_store = feature_store ##np.array
         self.feature_type = feature_type #connectivity /clusters / shuffle / iso_pairs / shuffle_iso_pairs
+        self.seed = seed
         
         if feature_store is None:
             if feature_type == "clusters" or feature_type == "shuffle":
@@ -44,6 +45,7 @@ class featuresObj():
             return values
 
         if self.feature_type == "shuffle":
+            
             clusters = self.testobject.clusterobj.index_clusters
             timeseries_object = self.timeserieslist
             prototype_func = self.testobject.clusterobj.prototypefunction
@@ -100,13 +102,22 @@ class featuresObj():
     def _clustering_number_of_clusters(self):
         pass
 
+    def _take_interval(self, sp):
+            #check interval between switch points
+        newsp = np.insert(sp,0,0)
+        newsp = np.append(newsp, self.testobject.timepts)
+        intervals = []
+        for i in range(len(sp)):
+            intervals.append(newsp[i+2]-newsp[i+1])
+        return intervals
+
     def _iso_pairs_switch_ratio(self):
         #return iso switching ratio for each pairs
         isopairs = self.testobject.isoobj.isopairs
         nisopairs = len(self.testobject.isoobj.isopairs['major_transcript'])
         iso_ratio = np.zeros(nisopairs)
         iso_dict_info = self.testobject.isoobj.iso_dict_info
-        print("check1", isopairs)
+
         def _cal_iso_ratio(n):
         # for n in range(nisopairs):
             iso1 = iso_dict_info[isopairs['major_transcript'][n]]
@@ -122,19 +133,26 @@ class featuresObj():
             except:
                 raise ValueError("{},{} doesn't seem valid.".format(iso1,iso2))
            
-            ir, allsp, final_sp, cor = self.testobject.isoobj._iso_switch_between_arrays(arr1,arr2,orgarr1,orgarr2)
-            
-            if any(allsp):
-                dv = np.max(allsp)
+            ir, alldiff, final_sp, cor = self.testobject.isoobj._iso_switch_between_arrays(arr1,arr2,orgarr1,orgarr2)
+
+            if any(alldiff):
+                bp = np.argmax(alldiff)
+                tmp_sw=np.insert(final_sp, 0,0)
+                tmp_sw=np.append(tmp_sw, self.testobject.timepts)
+                iso_inter = np.max(self._take_interval(alldiff))
+                #iso_prob = ((np.sum(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]>arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]))/arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0].shape[0]) + ((np.sum(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]<arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]))/(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0].shape[0]))
+                dv = np.max(alldiff)
             else:
                 dv = 0
-            return ir, dv, cor
+                iso_prob=0
+                iso_inter=0
+                
+            return dv, cor, iso_inter
         #
         #parallel run 
         res = Parallel(backend="loky") (delayed(_cal_iso_ratio)(n) for n in range(nisopairs))
-        print("check2", res)
-        iso_ratio, diff, corr = map(list,zip(*res))
-        return iso_ratio, diff, corr
+        diff, corr, iso_inter = map(list,zip(*res))
+        return corr, iso_inter
 
     def _shuffle_iso_pairs_switch_ratio(self):
         #return iso switching ratio for each pairs
@@ -152,12 +170,18 @@ class featuresObj():
             groupdict[sym]['indices'].append(idx)
             groupdict[sym]['array'].append(self.timeserieslist[:,idx,:])
     
-
+        
         #normlize work
         for sym, df in groupdict.items():
             df['array'] = np.concatenate(df['array']).reshape(self.testobject.reps1,len(df['array']),self.testobject.timepts)
             tmp = df['array']/np.sum(df['array'], axis=1)
             tmp[np.isnan(tmp)] = 0
+            for i in range(tmp.shape[0]):
+                #np.random.shuffle(tmp[i,:,:])
+                for j in range(tmp.shape[1]):
+                    np.random.seed(self.seed)
+                    np.random.shuffle(tmp[i,j,:])
+
             groupdict[sym]['normarr'] = tmp
 
         def _cal_iso_ratio(n):
@@ -168,19 +192,25 @@ class featuresObj():
             arr1 = groupdict[iso1[0]]['normarr'][:,iso1[1],:]
             arr2 = groupdict[iso2[0]]['normarr'][:,iso2[1],:]
 
-            orgarr1 = groupdict[iso1[0]]['array'][:,iso1[1],:]
-            orgarr2 = groupdict[iso2[0]]['array'][:,iso2[1],:]
+            # orgarr1 = groupdict[iso1[0]]['array'][:,iso1[1],:]
+            # orgarr2 = groupdict[iso2[0]]['array'][:,iso2[1],:]
 
-            ir, allsp, final_sp, cor = self.testobject.isoobj._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
-            if any(allsp):
-                return ir, np.max(allsp), cor
+            ir, alldiff, final_sp, cor = self.testobject.isoobj._iso_switch_between_arrays(arr1, arr2, arr1, arr2)
+            
+            if any(alldiff):
+                bp = np.argmax(alldiff)
+                tmp_sw=np.insert(final_sp, 0,0)
+                tmp_sw=np.append(tmp_sw, self.testobject.timepts)
+                iso_inter = self._take_interval(alldiff)
+                #iso_prob = (((np.sum(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]>arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]))/arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0].shape[0]) + ((np.sum(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]<arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]))/(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0].shape[0])))/2
+                return np.max(alldiff), cor, np.max(iso_inter)
             else:
-                return ir, 0, cor
+                return 0, cor, 0
 
         res = Parallel(backend="loky") (delayed(_cal_iso_ratio)(n) for n in range(nisopairs))
 
-        iso_ratio, diff, corr = map(list,zip(*res))
-        return iso_ratio, diff, corr
+        diff, corr, iso_inter = map(list,zip(*res))
+        return corr, iso_inter
 
 
 

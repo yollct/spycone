@@ -36,8 +36,6 @@ class shuffling():
         timepoints = alltimeseriesobj.shape[2]
         replicates = alltimeseriesobj.shape[0]
 
-        random.seed()
-        
         eachrow = np.zeros((objectsize, timepoints), dtype="double")
         shuffled_rows = np.zeros((objectsize, timepoints), dtype="double")
         shuffled = np.zeros((replicates, objectsize, timepoints), dtype="double")

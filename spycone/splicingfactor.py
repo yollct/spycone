@@ -66,7 +66,7 @@ class SF_coexpression():
     
         return sfs
 
-    def _get_matrices(self, sfs):
+    def _get_matrices(self, sfs, timelag=1):
         ##calculate isoform abundances
         #
         isoabun = np.empty(shape=(self.dataset.shape[0], 0, self.dataset.shape[2]))
@@ -102,8 +102,8 @@ class SF_coexpression():
 
 
         ##filter splicing factors variances
-        highvar = np.where(np.var(sfs_expression, axis=1)>10)[0]
-        final_sfsexp =sfs_expression[highvar,:]
+        highvar = np.where(np.var(sfs_expression, axis=1)>1)[0]
+        final_sfsexp =sfs_expression[highvar,:] 
         final_sfid = [sf_id[x] for x in highvar]
 
         ##
@@ -348,10 +348,12 @@ class SF_motifsearch():
                         # if self.motif_thres[submotstr] is not None:
                         #     allscores = pssm[0].search(test_seq, threshold=self.motif_thres[submotstr])
                             
-                        for pos, sc in enumerate(allscores):
-                            submotifs = f"{exon};1;{pos};{sc}"
-                            sf_results[submotstr].append(submotifs)
-
+                        # for pos, sc in enumerate(allscores):
+                        #     submotifs = f"{exon};1;{pos};{sc}"
+                        #     sf_results[submotstr].append(submotifs)
+                        #### this only save the scores not the position  
+                        this_threshold = self.motif_thres[submotstr] 
+                        sf_results[submotstr] = [sc if not np.isnan(sc) else next if sc > this_threshold else next for sc in allscores]
                     else:
                         continue
             gc.collect()
@@ -391,15 +393,19 @@ class SF_motifsearch():
         #get exons from IS results
         target_exons = self.dataset.isoobj.is_result[self.dataset.isoobj.is_result['gene_symb'].isin(self.list_genes)]
         target_exons_dict = defaultdict(list)
+        n_exons =0
         if exons=="loss":
             for x in target_exons.iterrows():
                 target_exons_dict[x[1]['gene_symb']]=x[1]['loss_exons']
+                n_exons+=len(x[1]['loss_exons'])
         else:
             for x in target_exons.iterrows():
                 target_exons_dict[x[1]['gene_symb']]=x[1]['gain_exons']
+                n_exons+=len(x[1]['gain_exons'])
 
         self.target_exons_dict = target_exons_dict
 
+        
         sf_results = defaultdict(list)
         motif_str =defaultdict(list)
         #get motif objects from list SF
@@ -416,7 +422,7 @@ class SF_motifsearch():
         ### note that each SF might have multiple motifs, in this case the motifs are denoted as SF_1, SF_2 from the same SF.
         self.motif_result = sf_results
         gc.collect()
-        return sf_results
+        return sf_results, n_exons
 
     def search_background_motifs(self, site="5p"):
         allexons = self.gtf["exon_id"].to_numpy()
@@ -425,9 +431,11 @@ class SF_motifsearch():
             ValueError("Please run search_motifs first.")
 
         bg_exons_dict=defaultdict(list)
+        n_exons=0
         target_exons = self.dataset.isoobj.is_result[self.dataset.isoobj.is_result['gene_symb'].isin(self.list_genes)]
         for x in target_exons.iterrows():
              bg_exons_dict[x[1]['gene_symb']]=x[1]['constant_exons']
+             n_exons+=len(x[1]['constant_exons'])
 
         self.bg_exons_dict =  bg_exons_dict
 
@@ -453,7 +461,7 @@ class SF_motifsearch():
 
         self.motif_background = sf_results
         gc.collect()
-        return sf_results
+        return sf_results, n_exons
     
 
     def _df_forvis(self, lossres, gainres, bg=None):
@@ -468,84 +476,80 @@ class SF_motifsearch():
                 return 0
 
         vis_sf = []
-        ldf = {'allpos':[],
+        ldf = {#'allpos':[],
         'logscores':[],
-        'allscores':[],
+        #'allscores':[],
         'sf_motif':[],
         'threshold':[]}
-        countexons=[]
-        for sf,v in lossres.items():
+        for sf,v in lossres[0].items():
             for eachmot, exons in v[0].items():
                 for ex in exons:
-                    countexons.append(ex.split(";")[0])
                     # signs = np.sign(float(ex.split(";")[2]))
                     # signss = 1 if signs == 0 else signs
                     # signsss = "+ strand" if signss==1 else "- strand"
-                    ldf['allpos'].append(np.abs(float(ex.split(";")[2]))-self.flanking)
-                    thisscore=float(ex.split(";")[3])
+                    #ldf['allpos'].append(np.abs(float(ex.split(";")[2]))-self.flanking)
+                    thisscore=float(ex)
                     ldf['logscores'].append(thisscore)
-                    ldf['allscores'].append(10**thisscore)
                     # df['alldir'].append(signsss)
                     ldf['sf_motif'].append(eachmot)
                     ldf['threshold'].append(self.motif_thres[eachmot])
 
         ldf = pd.DataFrame(ldf)
         ldf['rawtype'] = "lost exons"
-        ldf['type'] = f"LE ({len(np.unique(countexons))})"
+        ldf['type'] = f"LE ({lossres[1]})"
         vis_sf.append(ldf)
 
-        gdf = {'allpos':[],
+        gdf = {#'allpos':[],
         'logscores':[],
-        'allscores':[],
+        #'allscores':[],
         'sf_motif':[],
         'threshold':[]}
-        countexons=[]
-        for sf,v in gainres.items():
+        #countexons=[]
+        for sf,v in gainres[0].items():
             for eachmot, exons in v[0].items():
                 for ex in exons:
-                    countexons.append(ex.split(";")[0])
+                    #countexons.append(ex)
                     # signs = np.sign(float(ex.split(";")[2]))
                     # signss = 1 if signs == 0 else signs
                     # signsss = "+ strand" if signss==1 else "- strand"
-                    gdf['allpos'].append(np.abs(float(ex.split(";")[2]))-self.flanking)
-                    thisscore=float(ex.split(";")[3])
+                    #gdf['allpos'].append(np.abs(float(ex.split(";")[2]))-self.flanking)
+                    thisscore=float(ex)
                     gdf['logscores'].append(thisscore)
-                    gdf['allscores'].append(10**thisscore)
+                    #gdf['allscores'].append(10**thisscore)
                     # df['alldir'].append(signsss)
                     gdf['sf_motif'].append(eachmot)
                     gdf['threshold'].append(self.motif_thres[eachmot])
 
         gdf = pd.DataFrame(gdf)
         gdf['rawtype'] = "gained exons"
-        gdf['type'] = f"GE ({len(np.unique(countexons))})"
+        gdf['type'] = f"GE ({gainres[1]})"
         
         vis_sf.append(gdf)
 
         if bg:
-            bgdf = {'allpos':[],
+            bgdf = {#'allpos':[],
             'logscores':[],
-        'allscores':[],
+        #'allscores':[],
         'sf_motif':[],
         'threshold':[]}
-            countexons=[]
-            for sf,v in bg.items():
+            for sf,v in bg[0].items():
                 for eachmot, exons in v[0].items():
                     for ex in exons:
-                        countexons.append(ex.split(";")[0])
+                        #countexons.append(ex.split(";")[0])
                         # signs = np.sign(float(ex.split(";")[2]))
                         # signss = 1 if signs == 0 else signs
                         # signsss = "+ strand" if signss==1 else "- strand"
-                        bgdf['allpos'].append(np.abs(float(ex.split(";")[2]))-self.flanking)
-                        thisscore=float(ex.split(";")[3])
+                        #bgdf['allpos'].append(np.abs(float(ex.split(";")[2]))-self.flanking)
+                        thisscore=float(ex)
                         bgdf['logscores'].append(thisscore)
-                        bgdf['allscores'].append(10**thisscore)
+                        #bgdf['allscores'].append(10**thisscore)
                         # bgdf['alldir'].append(signsss)
                         bgdf['sf_motif'].append(eachmot)
                         bgdf['threshold'].append(self.motif_thres[eachmot])
 
             bgdf = pd.DataFrame(bgdf)
             bgdf['rawtype'] = "background"
-            bgdf['type'] = f"UE ({len(np.unique(countexons))})"
+            bgdf['type'] = f"UE ({bg[1]})"
             vis_sf.append(bgdf)
         
         alldf = pd.concat(vis_sf)
@@ -585,10 +589,6 @@ class SF_motifsearch():
                 except ValueError:
                     pvals[sf].append(1)
 
-                try:
-                    pvals[sf].append(kruskal(lexons, gexons, bgs)[1]) #[lost, gain]
-                except ValueError:
-                    pvals[sf].append(1)
 
         return pvals
 

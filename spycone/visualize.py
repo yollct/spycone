@@ -576,9 +576,10 @@ def vis_modules(mods, dataset, cluster, size=5, outputpng=None):
             plt.show()
 
 from pyvis.network import Network
-def _make_html(edges, mapping, ascov, html):
+def _make_dot(edges, mapping, ascov, related_genes):
     isgene = ascov['gene'].unique()
     nxnet = nx.Graph(list(edges.edges))
+    nxdot = nx.drawing.nx_pydot.to_pydot(nxnet)
     infile = open(os.path.join("./spycone_pkg/spycone/data/network/network_human_PPIDDI.tab.pkl"),'rb')
     jointgraph = pickle.load(infile)
     def map_entrez2symb(x):
@@ -589,30 +590,37 @@ def _make_html(edges, mapping, ascov, html):
         return symb
     mapper = list(map(map_entrez2symb, nxnet.nodes))
     
-    for e,n in enumerate(nxnet.nodes):
-        nxnet.nodes[n]['label'] = mapper[e]
+    allnodes = [nxdot.get_nodes()[x].get_name() for x in range(len(nxdot.get_nodes()))]
+    for e,n in enumerate(allnodes):
+        nxdot.get_node(n)[0].obj_dict['attributes']['label'] = mapper[e]
+        if mapper[e] in set(related_genes):
+            nxdot.get_node(n)[0].obj_dict['attributes']['color']="#01aeb2"
+            nxdot.get_node(n)[0].obj_dict['attributes']['penwidth']=5
+        nxdot.get_node(n)[0].obj_dict['attributes']['style'] = "filled"
+        nxdot.get_node(n)[0].obj_dict['attributes']['fontname'] = "verdana"
         if str(n) in set(isgene):
-            nxnet.nodes[n]['group'] = 1
+            nxdot.get_node(n)[0].obj_dict['attributes']['fillcolor'] = "#CFA3EA"
         else:
-            nxnet.nodes[n]['group'] = 0
+           nxdot.get_node(n)[0].obj_dict['attributes']['fillcolor'] = "#FBA27B"
     
     ##check if interaction is affected
-    for e, edge in enumerate(nxnet.edges):
+    alledges = [nxdot.get_edges()[x].obj_dict['points'] for x in range(len(nxdot.get_edges()))]
+    for e, edge in enumerate(alledges):
         no1 = edge[0]
         no2 = edge[1]
         domain1 = ascov[ascov['gene']==no1][['exclusive_domains']].explode('exclusive_domains').exclusive_domains.unique()
         domain2 = ascov[ascov['gene']==no2][['exclusive_domains']].explode('exclusive_domains').exclusive_domains.unique()
 
-        dash=False
+        style=""
         if domain1.shape[0]>0:
             for do in domain1:
                 try:
                     checknode = str(no1)+"/"+do
                     for jointedge in jointgraph.edges:
                         if jointedge[0] == checknode and str(no2) in jointedge[1]:
-                            dash=True
+                            style="dashed"
                         if jointedge[1] == checknode and str(no2) in jointedge[0]:
-                            dash=True
+                            style="dashed"
                 except:
                     continue
         
@@ -622,39 +630,56 @@ def _make_html(edges, mapping, ascov, html):
                     checknode = str(no2)+"/"+do
                     for jointedge in jointgraph.edges:
                         if jointedge[0] == checknode and str(no1) in jointedge[1]:
-                            dash=True
+                            style="dashed"
                         if jointedge[1] == checknode and str(no1) in jointedge[0]:
-                            dash=True
+                            style="dashed"
                 except:
                     continue
 
-        nxnet.edges[edge]['dashes'] = dash
-            
+        nxdot.get_edges()[e].obj_dict['attributes']['style'] = style
+        nxdot.get_edges()[e].obj_dict['attributes']['penwidth'] = 3
+        
+    return(nxdot)
+    # nt = Network(height="1000px", width="1000px", notebook=True)
+    # nt.from_nx(nxnet)
+    # nt.options.edges.color.inherit = False
+    # nt.options.groups = """{
+    #     2: {color:{background:'green'}},
+    #     1: {color:{background:'yellow'}},
+    #     0: {color:{background:'lightblue'}}
+    # }"""
+    # nt.show_buttons()
+    # nt.show(html)
 
-    nt = Network(height="1000px", width="1000px", notebook=True)
-    nt.from_nx(nxnet)
-    nt.options.edges.color.inherit = False
-    nt.options.groups =  '''{
-                1: {color:{background:'yellow'}},
-                 0: {color:{background:'lightblue'}}
-    }'''
-    nt.show_buttons()
-    nt.show(html)
 
+def vis_better_modules(dataset, mod, cluster, dir, related_genes=set()):
+    """
+    Visualize modules with pydot in SVG format.
 
-def vis_better_modules(dataset, mod, cluster, dir, module=None):
+    Parameters 
+    ------------
+    dataset : 
+        dataset obj
+    mod : 
+        DOMINO results
+    cluster :
+        Cluster number to visualize
+    dir :
+        Local directory to save the images
+    related_genes : (Optional)
+        Set of genes to change the color of the nodes (color of the node outer border)
+    """
     ascov1 = dataset.isoobj.is_result 
-    print(dir)
     #ascov1['gene'] = list(map(str, list(map(lambda x: int(x) if not np.isnan(x) else x, ascov1['gene']))))
     mapping = dict(zip(dataset.gene_id, dataset.symbs))
 
-    if module:
-        edges = mod[cluster][0][module]
-        _make_html(edges, mapping, ascov1, f"{dir}/c{cluster}m{module}.html")
-    else:
-        mods = mod[cluster][0]
-        for e,v in enumerate(mods):
-            if len(v.nodes)>4:
-                _make_html(v, mapping, ascov1, f"{dir}/c{cluster}m{e}.html")
+    mods = mod[cluster][0]
+    for e,v in enumerate(mods):
+        if len(v.nodes)>4:
+            nxdot=_make_dot(v, mapping, ascov1, f"{dir}modules/c{cluster}m{e}.html", related_genes)
+            nxdot.obj_dict['attributes']['label'] = f"Cluster {cluster} Module {e+1}: \n adjusted p-val: {mod[cluster][1][e]:.2E}"
+            nxdot.obj_dict['attributes']['fontsize'] = 17
+            nxdot.obj_dict['attributes']['fontname'] = "verdana"
+            nxdot.write_svg(f"{dir}/modules/c{cluster}m{e+1}.svg")
         
 
