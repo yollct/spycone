@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-from scipy.spatial.distance import cdist
-from sklearn.metrics.pairwise import euclidean_distances
 
 from .BioNetwork import BioNetwork
 
