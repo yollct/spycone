@@ -51,9 +51,9 @@ def setup_package():
     metadata = dict(name='spycone',
     version='0.0.1',
     description='A splicing-aware time course network enricher',
-    url='https://gitlab.lrz.de/yollct/ticone_pkg',
+    url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
-    author_email='chit-tong.lio@wzw.tum.de',
+    author_email='ct7298@gmail.com',
     license='GPLv3',
     classifiers=[
       "Programming Language :: Python :: 3",
