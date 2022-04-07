@@ -728,7 +728,7 @@ class iso_function():
         self.is_result = res
         self.dataset.isoobj = self
 
-        return res.reset_index(drop=True)
+        return res.reset_index(drop=True)[['gene', 'gene_symb', 'major_transcript', 'minor_transcript', 'switch_prob', 'corr', 'event_importance', 'exclusive_domains', 'p_value', 'adj_pval']]
 
 
     def _isoform_usage(self, eachgene, norm):

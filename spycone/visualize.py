@@ -575,16 +575,15 @@ def vis_modules(mods, dataset, cluster, size=5, outputpng=None):
             plt.axis('off')
             plt.show()
 
-from pyvis.network import Network
-def _make_dot(edges, mapping, ascov, related_genes):
+def _make_dot(edges, mapping, ascov, html, related_genes):
     isgene = ascov['gene'].unique()
     nxnet = nx.Graph(list(edges.edges))
     nxdot = nx.drawing.nx_pydot.to_pydot(nxnet)
     infile = open(os.path.join("./spycone_pkg/spycone/data/network/network_human_PPIDDI.tab.pkl"),'rb')
     jointgraph = pickle.load(infile)
     def map_entrez2symb(x):
-        if x in mapping.keys():
-            symb = mapping[x]
+        if int(x) in mapping.keys():
+            symb = mapping[int(x)]
         else:
             symb = x
         return symb
@@ -652,7 +651,7 @@ def _make_dot(edges, mapping, ascov, related_genes):
     # nt.show(html)
 
 
-def vis_better_modules(dataset, mod, cluster, dir, related_genes=set()):
+def vis_better_modules(dataset, mod, cluster, dir, related_genes=set(), module=None):
     """
     Visualize modules with pydot in SVG format.
 
@@ -671,15 +670,21 @@ def vis_better_modules(dataset, mod, cluster, dir, related_genes=set()):
     """
     ascov1 = dataset.isoobj.is_result 
     #ascov1['gene'] = list(map(str, list(map(lambda x: int(x) if not np.isnan(x) else x, ascov1['gene']))))
-    mapping = dict(zip(dataset.gene_id, dataset.symbs))
+    mapping = pickle.load(open("/nfs/proj/spycone/spycone_pkg/spycone/data/entrez2symb.pkl", "rb"))
 
-    mods = mod[cluster][0]
-    for e,v in enumerate(mods):
-        if len(v.nodes)>4:
-            nxdot=_make_dot(v, mapping, ascov1, f"{dir}modules/c{cluster}m{e}.html", related_genes)
-            nxdot.obj_dict['attributes']['label'] = f"Cluster {cluster} Module {e+1}: \n adjusted p-val: {mod[cluster][1][e]:.2E}"
-            nxdot.obj_dict['attributes']['fontsize'] = 17
-            nxdot.obj_dict['attributes']['fontname'] = "verdana"
-            nxdot.write_svg(f"{dir}/modules/c{cluster}m{e+1}.svg")
+    if module:
+        edges = mod[cluster][0][module]
+        nxdot = _make_dot(edges, mapping, ascov1, f"{dir}modules/c{cluster}m{module}.html", related_genes)
+        nx.drawing.nx_pydot.to_pydot(nxdot,  f"{dir}/modules/c{cluster}m{module}.dot")
+    else:
+        mods = mod[cluster][0]
+        for e,v in enumerate(mods):
+            if len(v.nodes)>4:
+                nxdot=_make_dot(v, mapping, ascov1, f"{dir}modules/c{cluster}m{e}.html", related_genes)
+                nxdot.obj_dict['attributes']['label'] = f"Cluster {cluster} Module {e+1}: \n adjusted p-val: {mod[cluster][1][e]:.2E}"
+                nxdot.obj_dict['attributes']['fontsize'] = 17
+                nxdot.obj_dict['attributes']['fontname'] = "verdana"
+                nxdot.write_svg(f"{dir}/modules/c{cluster}m{e+1}.svg")
+
         
 
