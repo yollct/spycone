@@ -43,49 +43,9 @@ def setup_package():
       'joblib',
       'nease'])
   
-    import numpy
-    from Cython.Build import cythonize
-    from Cython.Distutils import build_ext
-    import pybind11
-    from setuptools import setup
-
-    class get_pybind_include(object):
-      """Helper class to determine the pybind11 include path
-
-      The purpose of this class is to postpone importing pybind11
-      until it is actually installed, so that the ``get_include()``
-      method can be invoked. """
-
-      def __init__(self, user=False):
-          self.user = user
-
-      def __str__(self):
-          import pybind11
-          return pybind11.get_include(self.user)
-
     cmdclass = {}
     ext_modules = []
-    ext_modules += [
-    #     #Extension("spycone._clustering.similarities", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()]),
-    #     #Extension("spycone._iso_function._iso_fast", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()]),
-          # Extension("spycone._connectivity.connectivity_task", ["spycone/_connectivity/connectivity_task.c"],include_dirs = [numpy.get_include()]),
-          # Extension("spycone._shuffle.shuffle", ["spycone/_shuffle/shuffle.c"],include_dirs = [numpy.get_include()]),
-        #   Extension(
-        # 'pcst_fast',
-        # sources=['spycone/DOMINO/src/pcst_fast_py/src/pcst_fast_pybind.cc', 'spycone/DOMINO/src/pcst_fast_py/src/pcst_fast.cc'],
-        # include_dirs=[
-        #     # Path to pybind11 headers
-        #     get_pybind_include(),
-        #     get_pybind_include(user=True)
-        # ],
-        # language='c++'
-    
-    ]
-    
-    cmdclass.update({'build_ext': build_ext})
-
     metadata['setup_requires']=['numpy']
-    metadata['ext_modules'] = ext_modules
 
     setup(**metadata)
 
