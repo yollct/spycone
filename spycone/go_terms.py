@@ -12,13 +12,8 @@ import numpy as np
 import os, sys
 import gseapy as gp
 import time
-import networkx as nx
 import warnings
 
-
-from .DataSet import DataSet
-from .BioNetwork import BioNetwork
-from ._clustering.clusterobj import clusterObj
 
 sys.path.insert(0, os.path.abspath('./_NEASE/nease/'))
 from ._NEASE.nease import nease

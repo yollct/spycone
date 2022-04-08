@@ -8,8 +8,6 @@ from functools import reduce
 import os
 import pickle
 
-from .DataSet import DataSet
-from .BioNetwork import BioNetwork
 from ._clustering.clusterobj import clusterObj
 
 def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Titles = "Cluster {col_name}", xtickslabels=None, **kwargs):

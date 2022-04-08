@@ -4,7 +4,6 @@ from scipy.stats import chi2
 import numpy as np
 import pandas as pd
 from functools import reduce
-import os
 
 from .DOMINO.src.core import domino
 from .DOMINO.src.core import preprocess_slices as sl

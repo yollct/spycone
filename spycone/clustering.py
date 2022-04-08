@@ -1,9 +1,6 @@
 import pandas as pd
 import numpy as np
 import time
-import random
-import warnings
-import logging
 from functools import reduce
 from collections import defaultdict
 from sklearn.cluster import *
@@ -14,8 +11,6 @@ from tslearn.clustering import TimeSeriesKMeans
 from tslearn.clustering import silhouette_score as tssilhouette_score
 from sklearn.metrics import davies_bouldin_score
 
-from .DataSet import DataSet
-from .BioNetwork import BioNetwork
 from ._prototype.prototype_builder import _prototype_builder
 #from ._util_stat.qc import _qc_silhouette
 from ._clustering.build_cluster import cluster_map_to_item
