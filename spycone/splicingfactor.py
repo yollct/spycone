@@ -6,7 +6,6 @@ import pandas as pd
 import os
 import pickle
 import requests
-from pybiomart import Server, Dataset
 import seaborn as sns
 import matplotlib.pyplot as plt
 from functools import reduce
@@ -15,9 +14,7 @@ from scipy.stats import mannwhitneyu, fisher_exact, kruskal
 from Bio.SeqUtils import GC
 from joblib import Parallel, delayed
 import gc
-from itertools import chain
-import time
-import warnings
+
 
 from ._util_stat.multipletesting import pvalue_correction
 

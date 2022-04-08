@@ -1,9 +1,6 @@
 import pandas as pd
 import numpy as np
 
-from .BioNetwork import BioNetwork
-
-
 def remove_object_notin_network(DataSet, BioNetwork):
     index_to_remove = []
     genelist = DataSet.gene_id

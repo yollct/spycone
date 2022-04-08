@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from collections import defaultdict
-from scipy.stats import ttest_ind, mannwhitneyu
+from scipy.stats import mannwhitneyu
 from scipy.stats import chi2
 import warnings
 from functools import reduce
@@ -10,12 +10,8 @@ import pickle, os, sys
 warnings.simplefilter("ignore")
 from collections import defaultdict
 
-from .DataSet import DataSet
-from .BioNetwork import BioNetwork
-#from ...archive.qc import plot_silhouette
 from ._util_stat.multipletesting import pvalue_correction
 from ._feature import featuresObj 
-from .clustering import clustering
 from ._shuffle import shuffling
 # Disable
 def _blockPrint():
