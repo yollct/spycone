@@ -6,47 +6,6 @@ from setuptools import Extension
 import sys
 
 
-
-
-def configuration(parent_package="", top_path=None):
-    if os.path.exists("MANIFEST"):
-        os.remove("MANIFEST")
-
-    from numpy.distutils.misc_util import Configuration
-    import numpy
-    config = Configuration("spycone", parent_package, top_path)
-
-    # Avoid useless msg:
-    # "Ignoring attempt to set 'name' (from ... "
-    config.set_options(
-        ignore_setup_xxx_py=True,
-        assume_default_configuration=True,
-        delegate_options_to_subpackages=True,
-        quiet=True,
-    )
-
-    # Cython is required by config.add_subpackage for templated extensions
-    # that need the tempita sub-submodule. So check that we have the correct
-    # version of Cython so as to be able to raise a more informative error
-    # message from the start if it's not the case.
-
-    config.add_subpackage("spycone/DOMINO")
-    config.add_subpackage("spycone/DOMINO/src/pcst_fast_py")
-    config.add_subpackage("spycone/_feature")
-    config.add_subpackage("spycone/_fitness")
-    config.add_subpackage("spycone/_NEASE")
-    config.add_subpackage("spycone/_preprocessing")
-    config.add_subpackage("spycone/_prototype")
-    config.add_subpackage("spycone/_util_stat")
-    config.add_subpackage("spycone/_visualization")
-
-    config.add_extension("spycone._clustering.similarities", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()])
-    config.add_extension("spycone._iso_function._iso_fast", sources=["spycone/_clustering/similarities.c"], include_dirs=[numpy.get_include()])
-    config.add_extension("spycone._connectivity.connectivity_task", ["spycone/_connectivity/connectivity_task.c"],include_dirs = [numpy.get_include()])
-    config.add_extension("spycone._shuffle.shuffle", ["spycone/_shuffle/shuffle.c"],include_dirs = [numpy.get_include()])
-
-    return config
-
 def setup_package():
     metadata = dict(name='spycone',
     version='0.0.2',
@@ -127,7 +86,6 @@ def setup_package():
 
     metadata['setup_requires']=['numpy']
     metadata['ext_modules'] = ext_modules
-    metadata["configuration"] = configuration
 
     setup(**metadata)
 
