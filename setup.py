@@ -49,7 +49,7 @@ def configuration(parent_package="", top_path=None):
 
 def setup_package():
     metadata = dict(name='spycone',
-    version='0.0.1',
+    version='0.0.2',
     description='A splicing-aware time course network enricher',
     url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
