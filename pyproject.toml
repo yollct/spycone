@@ -3,11 +3,11 @@ requires = ["setuptools", "wheel", "Cython", "numpy>=1.18.0", "pybind11==2.1.0"]
 
 [tool.poetry]
 name = 'spycone'
-version = "0.0.1"
+version = "0.0."
 description = "A splicing-aware time course network enricher"
 authors = ["Chit Tong Lio"]
 license = "GPL-3.0-only"
-homepage = "https://gitlab.lrz.de/yollct/ticone_pkg"
+homepage = "https://github.com/yollct/spycone.git"
 classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
