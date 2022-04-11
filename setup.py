@@ -38,8 +38,7 @@ def setup_package():
       'python-louvain',
       'plotly>=4.14.3',
       'biopython',
-      'gtfparse', 
-      'pyvis>=0.1.9', 
+      'gtfparse',  
       'joblib',
       'nease'])
   

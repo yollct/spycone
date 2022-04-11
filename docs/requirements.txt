@@ -22,3 +22,5 @@ pcst_fast>=1.0.7
 tslearn>=0.5
 python-louvain
 plotly>=4.14.3
+biopython
+nease>=1.1.8
