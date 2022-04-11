@@ -12,11 +12,16 @@ pip install .
 ```
 
 # Installation
+It is available as a pypi package:
+```
+pip install spycone
+```
+
+Or alternatively install the latest development:
 ```
 git clone https://github.com/yollct/spycone
 cd spycone
 pip install .
 ```
-
 
 For more information, please check our documentation [https://spycone.readthedocs.io/en/latest/index.html](https://spycone.readthedocs.io/en/latest/index.html).
