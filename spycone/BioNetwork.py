@@ -3,6 +3,8 @@
 #import networkx as nx
 import numpy as np
 import networkx as nx
+import os
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class BioNetwork:
     """Storage of biological network.
@@ -10,10 +12,7 @@ class BioNetwork:
     Parameters
     ----------
     path : 
-        dir path to the network file or network object (graph-tool)
-
-    type : 
-        `file` if path is dir path, `network` if path is network object
+        dir path to the network file or "human" as default human biogrid network
 
 
     Attributes
@@ -46,13 +45,11 @@ class BioNetwork:
     """
     def __init__(
         self, 
-        path = "./spycone_pkg/data/network/networkBIOGRID-ALL-3.5.171.tab2",
+        path = "human",
         keytype="entrezid",
-        typ = 'file',
         **kwargs
         ):
         self.path = path
-        self.typ = typ
         self.keytype=keytype
 
         self.kwargs = {}
@@ -69,9 +66,16 @@ class BioNetwork:
         """
         Read the network path and generate networkx object.
         """
-        if self.typ == "file":
+        if self.path == "human":
             #print("Reading edge list and removing loops")
-            path = self.path
+            path = os.path.join(dir_path,f'data/network/9606_biogrid_entrez.tab')
+            g = nx.read_edgelist(path=path, **self.kwargs)
+            tmp = 0
+            for gene in g:
+                if gene in g[gene]:
+                    tmp += 1
+                    g.remove_edge(gene, gene)
+        else:
             g = nx.read_edgelist(path=path, **self.kwargs)
             tmp = 0
             for gene in g:
@@ -96,11 +100,8 @@ class BioNetwork:
 
             # g.vertex_properties['name'] = v_prop
             # remove_parallel_edges(g) #remove duplicates edges
-            self.networkz = g
-        else:
-            g = self.path
-            self.networkz = g
-        
+        self.networkz = g
+   
         
     def lst_g(self):
         """
