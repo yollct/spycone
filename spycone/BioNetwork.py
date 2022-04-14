@@ -75,6 +75,14 @@ class BioNetwork:
                 if gene in g[gene]:
                     tmp += 1
                     g.remove_edge(gene, gene)
+        elif self.path == "mouse":
+            path = os.path.join(dir_path,f'data/network/10090_biogrid_entrez.tab')
+            g = nx.read_edgelist(path=path, **self.kwargs)
+            tmp = 0
+            for gene in g:
+                if gene in g[gene]:
+                    tmp += 1
+                    g.remove_edge(gene, gene)
         else:
             g = nx.read_edgelist(path=path, **self.kwargs)
             tmp = 0
