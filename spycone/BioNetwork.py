@@ -101,7 +101,12 @@ class BioNetwork:
             # g.vertex_properties['name'] = v_prop
             # remove_parallel_edges(g) #remove duplicates edges
         self.networkz = g
-   
+
+    def g(self):
+        """
+        Return the networkx object.
+        """
+        return self.networkz
         
     def lst_g(self):
         """
