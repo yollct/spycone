@@ -5,10 +5,13 @@ from distutils.command.sdist import sdist as _sdist
 from setuptools import Extension
 import sys
 
+from setuptools.command.install import install as InstallCommand
+
+
 
 def setup_package():
     metadata = dict(name='spycone',
-    version='0.0.4',
+    version='0.0.5',
     description='A splicing-aware time course network enricher',
     url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
@@ -24,7 +27,6 @@ def setup_package():
     include_package_data=True,
     python_requires='>=3.7',
     install_requires=[
-      'pcst_fast @ https://github.com/fraenkel-lab/pcst_fast/archive/refs/tags/1.0.7.zip',
       'pandas>=1.0.1',
       'numpy>=1.19.0',
       'seaborn',
@@ -43,7 +45,6 @@ def setup_package():
       'joblib',
       'nease'])
   
-    cmdclass = {}
     ext_modules = []
     metadata['setup_requires']=['numpy']
 
