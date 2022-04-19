@@ -1,0 +1,14 @@
+Metadata-Version: 2.0
+Name: pcst-fast
+Version: 1.0.7
+Summary: UNKNOWN
+Home-page: https://github.com/fraenkel-lab/pcst_fast
+Author: ludwigschmidt
+Author-email: alex@lenail.org
+License: GNU General Public License
+Platform: UNKNOWN
+Requires-Dist: pybind11 (>=2.1.0)
+
+UNKNOWN
+
+
