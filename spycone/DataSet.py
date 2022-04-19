@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 from collections import defaultdict
-
+dir_path = os.path.dirname(os.path.realpath(__file__))
 from ._preprocessing._discretization import discretization_with_steps, discretize_timeseries, discretize_replicates
 
 def _map_to_gene_name(keys, keytype, species, transid_type = None):
     keymap = {'entrezgeneid': 'NCBI gene (formerly Entrezgene) ID', 'ensemblgeneid': 'Gene stable ID', 'ensembltransid' : 'Transcript stable ID', 'ensembltransidver': "Transcript stable ID version"}
-    ann = pd.read_csv("./spycone_pkg/data/annotation/{}_ann.csv".format(species), index_col=keymap[keytype], dtype=str)
+    ann = pd.read_csv(os.path.join(dir_path, "data/annotation/{}_ann.csv".format(species)), index_col=keymap[keytype], dtype=str)
     ann.index = list(map(str, list(map(lambda x: int(x) if not np.isnan(x) else x, ann.index))))
     ann_dict = ann.to_dict()
     
@@ -21,7 +21,7 @@ def _map_to_gene_name(keys, keytype, species, transid_type = None):
 
 def _map_trans_to_gene(keys, keytype, species, transid_type = None):
     keymap = {'entrezgeneid': 'NCBI gene (formerly Entrezgene) ID', 'ensemblgeneid': 'Gene stable ID', 'ensembltransid' : 'Transcript stable ID', 'ensembltransidver': "Transcript stable ID version"}
-    ann = pd.read_csv("./spycone_pkg/data/annotation/{}_ann.csv".format(species), index_col=keymap[transid_type], dtype=str)
+    ann = pd.read_csv(os.path.join(dir_path, "data/annotation/{}_ann.csv".format(species)), index_col=keymap[transid_type], dtype=str)
     ann_dict = ann.to_dict()
 
     a = []

@@ -50,7 +50,7 @@ class SF_coexpression():
 
     def _get_splicing_factors(self):
         sfs=[]
-        with open("./spycone_pkg/spycone/data/network/splicingfactors.txt", "r") as f:
+        with open(os.path.join(dir_path, "data/network/splicingfactors.txt"), "r") as f:
             tmp=f.readlines()
             for ss in tmp:
                 sfs.append(ss.replace("\n", ""))
@@ -213,12 +213,11 @@ def create_motifsobj():
         #     m = motifs.create(instances)
 
         #     motif_obj.append(m)
-        dir = "/nfs/proj/spycone/"
         # return motif_obj
         motif_obj = defaultdict(list)
-        for mat in os.listdir(os.path.join(dir, "sfanalysis/eCLIP_PWM")):
+        for mat in os.listdir(os.path.join(dir_path, "data/eCLIP_PWM")):
             if ".txt" in mat :
-                with open(os.path.join(dir, "sfanalysis/eCLIP_PWM",mat)) as handle:
+                with open(os.path.join(dir_path, "data/eCLIP_PWM",mat)) as handle:
                     record = motifs.parse(handle, "TRANSFAC")
                 motif_obj[mat.split(".")[1]].append(record)
 
