@@ -25,7 +25,7 @@ def setup_package():
     python_requires='>=3.7',
     install_requires=[
       'pandas>=1.0.1',
-      'numpy>=1.18.1',
+      'numpy>=1.21',
       'seaborn',
       'scikit-learn>=0.23.2',
       'scikit-learn-extra>=0.1.0',
