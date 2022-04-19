@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from collections import defaultdict
+import os 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 from ._preprocessing._discretization import discretization_with_steps, discretize_timeseries, discretize_replicates
 
