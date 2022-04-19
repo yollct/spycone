@@ -8,7 +8,7 @@ import sys
 
 def setup_package():
     metadata = dict(name='spycone',
-    version='0.0.3',
+    version='0.0.4',
     description='A splicing-aware time course network enricher',
     url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
