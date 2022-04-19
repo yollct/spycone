@@ -1,0 +1,10 @@
+AC  K562.SERBP1.7
+XX
+TY  Motif
+XX
+ID  K562.SERBP1.7
+XX
+NA  K562.SERBP1.7
+XX
+DE  N=0, Consensus=NNGCATATCNN, Score=0
+P0  A  C  G  T

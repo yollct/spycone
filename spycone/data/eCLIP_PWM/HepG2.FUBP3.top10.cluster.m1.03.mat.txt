@@ -1,0 +1,10 @@
+AC  HepG2.FUBP3.3
+XX
+TY  Motif
+XX
+ID  HepG2.FUBP3.3
+XX
+NA  HepG2.FUBP3.3
+XX
+DE  N=0, Consensus=NNAATCGCGNN, Score=0
+P0  A  C  G  T
