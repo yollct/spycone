@@ -23,6 +23,7 @@ from ..utils.graph_influence_linear_th import linear_threshold
 from .preprocess_slices import read_preprocessed_slices
 from .network_builder import build_network
 from ..constants import * 
+sys.path.insert(0, "../../")
 
 import pcst_fast
 G_modularity = None
