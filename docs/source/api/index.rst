@@ -40,15 +40,6 @@ preprocess
 
     preprocess
         
-connectivity
---------------
-.. currentmodule:: spycone.connectivity
-
-.. autosummary::
-    :template: ./_templates/class.rst
-    :toctree: generated/
-
-    connectivity
 
 iso_function
 -------------
@@ -108,4 +99,17 @@ visualize
     spycone.visualize.vis_all_clusters
     spycone.visualize.switch_plot
     spycone.visualize.gsea_plot
+
+
+iso_function
+-------------
+.. currentmodule:: spycone.splicingfactor
+
+.. autosummary::
+    :template: ./_templates/class.rst
+    :toctree: generated/
+
+    spycone.splicingfactor.SF_coexpression
+    spycone.splicingfactor.SF_motifsearch
+
     

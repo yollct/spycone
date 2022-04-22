@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, "../")
 import networkx as nx
 import pandas as pd
-import community as community_louvain
+import community.community_louvain as community_louvain
 import numpy as np
 
 def create_slices(network_file, output_file_name, resolution=0.15):
