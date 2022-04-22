@@ -68,7 +68,7 @@ class BioNetwork:
         """
         if self.path == "human":
             #print("Reading edge list and removing loops")
-            path = os.path.join(dir_path,f'data/network/9606_biogrid_entrez.tab')
+            path = os.path.join(dir_path,f'data/network/9606_ddi_weighted_biogrid_entrez.tab')
             g = nx.read_edgelist(path=path, **self.kwargs)
             tmp = 0
             for gene in g:
