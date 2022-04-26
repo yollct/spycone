@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, "../")
 import networkx as nx
 import pandas as pd
-import community.community_louvain as community_louvain
+import community.community_louvain as community
 import numpy as np
 
 def create_slices(network_file, output_file_name, resolution=0.15):
@@ -13,7 +13,7 @@ def create_slices(network_file, output_file_name, resolution=0.15):
     else:
         G = network_file.networkz
 
-    partition = community_louvain.best_partition(G, resolution=resolution, random_state=1)  # 0.1
+    partition = community.best_partition(G, resolution=resolution, random_state=1)  # 0.1
     prt = {k: [] for k in np.arange(len(np.unique(list(partition.values()))))}
     for k, v in partition.items():
         prt[v].append(k)
