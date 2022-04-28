@@ -210,5 +210,5 @@ def list_genesets(organism):
     organism:
         human, mouse, etc.
     """
-    return gp.get_library_name(database=organism)
+    return gp.get_library_name(organism)
 

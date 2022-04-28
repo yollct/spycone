@@ -472,9 +472,9 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
     cluster = int(cluster)
 
     if modules is None:
-        mod_cluster = gsea_result[cluster]
+        mod_cluster = gsea_result[0][cluster]
     else:
-        mod_cluster = gsea_result[cluster][modules]
+        mod_cluster = gsea_result[0][cluster][modules]
 
     if isinstance(mod_cluster, dict):
         subset = pd.DataFrame(mod_cluster[0])
@@ -499,7 +499,10 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
 
 
 def vis_modules(mods, dataset, cluster, size=5, outputpng=None):
-    ascov = dataset.isoobj.is_result
+    if hasattr(dataset, "isoobj"):
+        ascov = dataset.isoobj.is_result
+    else:
+        ascov = pd.DataFrame({'gene':dataset.clusterobj.genelist_clusters[cluster]})
 
     mapping = dict(zip(dataset.gene_id,dataset.symbs))
 
