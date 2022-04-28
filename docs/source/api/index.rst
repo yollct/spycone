@@ -101,7 +101,7 @@ visualize
     spycone.visualize.gsea_plot
 
 
-iso_function
+Splicing factor analysis
 -------------
 .. currentmodule:: spycone.splicingfactor
 
