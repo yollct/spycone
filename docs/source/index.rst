@@ -16,6 +16,10 @@ Installation
 
 To install Spycone::
 
+   pip install spycone
+
+To install the latest development::
+
    git clone https://github.com/yollct/spycone.git
    cd spycone
    pip install .
