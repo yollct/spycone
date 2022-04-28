@@ -1,4 +1,5 @@
-[![PyPI version](https://badge.fury.io/py/spycone.svg)](https://badge.fury.io/py/spycone)
+[![PyPI version](https://badge.fury.io/py/spycone.svg)](https://badge.fury.io/py/spycone) 
+[![Documentation Status](https://readthedocs.org/projects/spycone/badge/?version=latest)](https://spycone.readthedocs.io/en/latest/?badge=latest)
 
 # Spycone - SPlicing-aware time-COurse Network Enricher
 
