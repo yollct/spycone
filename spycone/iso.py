@@ -231,6 +231,56 @@ class iso_function():
     Species : 
         Species ID
 
+    Methods
+    --------
+    detect_isoform_switch :
+
+        Parameters
+        ----------
+        combine : {'median', 'mean'}
+            aggregation methods for replicates. Default="median"
+
+        filtering : (boolean, default=True) 
+            if True, low expression genes will be filtered out.
+
+        filter_cutoff : default=2
+            expression mean cutoff to filter.
+
+        corr_cutoff : default = 0.7
+            minimum correlation of isoform pairs to be included in the output.
+
+        p_val_cutoff : default = 0.05   
+            significant p-value cutoff to be included in the output.
+
+        min_diff : default = 0.1
+            minimum differences of relative abundance to be included in the output.
+
+        event_im_cutoff : default = 0.1
+            minimum event importance to be included in the output.
+
+        adjustp : str {'fdr_bh' (default), 'holm_bonf', 'bonf'}
+            Method for multiple testing
+            bonf: Bonferroni method
+            holm_bonf: holm-bonferroni method
+            fdr_bh: Benjamin-hochberg false discovery rate
+
+        n_permutations :
+            Number of permutations if permutation test is used.
+
+    total_isoform_usage : 
+    
+        Parameters
+        ----------
+        ids_result 
+            the result dataframe of isoform switch detection
+
+        norm : `boolean`, default=True
+            if True, it normalizes time series matrix to relative abundance to gene expression.
+
+        gene_level : `boolean`, default=True
+            if True, it calculates total isoform usage for each gene, otherwise individual isoform usage for each isoform
+
+
     Return 
     --------
     Create an instance for isoform switch analysis. 
@@ -545,37 +595,7 @@ class iso_function():
         """
         Detect isoform switching events along time series.
         
-        Parameters
-        ----------
-        combine : {'median', 'mean'}
-            aggregation methods for replicates. Default="median"
-
-        filtering : (boolean, default=True) 
-            if True, low expression genes will be filtered out.
-
-        filter_cutoff : default=2
-            expression mean cutoff to filter.
-
-        corr_cutoff : default = 0.7
-            minimum correlation of isoform pairs to be included in the output.
-
-        p_val_cutoff : default = 0.05   
-            significant p-value cutoff to be included in the output.
-
-        min_diff : default = 0.1
-            minimum differences of relative abundance to be included in the output.
-
-        event_im_cutoff : default = 0.1
-            minimum event importance to be included in the output.
-
-        adjustp : str {'fdr_bh' (default), 'holm_bonf', 'bonf'}
-            Method for multiple testing
-            bonf: Bonferroni method
-            holm_bonf: holm-bonferroni method
-            fdr_bh: Benjamin-hochberg false discovery rate
-
-        n_permutations :
-            Number of permutations if permutation test is used.
+        
 
         Return
         ------
