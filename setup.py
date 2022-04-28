@@ -34,7 +34,7 @@ def setup_package():
       'scikit-learn-extra>=0.1.0',
       'networkx>=2.4',
       'matplotlib>=3.1.3',
-      'gseapy>=0.9.4',
+      'gseapy>=0.9.12',
       'scipy>=1.4.1',
       'statsmodels>=0.11.0',
       'tslearn>=0.5.1.0',

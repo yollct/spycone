@@ -588,7 +588,7 @@ class SF_motifsearch():
 
         return pvals
 
-    def vis_motif_density(self, res=None, style="2D", bg=None, method="mannwhitney", pval_cutoff=None, merge_motif=False, alldf=None, pvals=None, palette=None, sf_list=None):
+    def vis_motif_density(self, res=None, style="boxplot", bg=None, method="mannwhitney", pval_cutoff=None, merge_motif=False, alldf=None, pvals=None, palette=None, sf_list=None):
         if alldf is None and pvals is None:
             if res is None:
                 raise("Please input result from search_motif() as res")
