@@ -51,10 +51,10 @@ def list_gsea(genelist, taxid, gene_sets=None, is_results=None, cutoff=0.05, met
         enr_results = enr.results[enr.results['Adjusted P-value']<cutoff]
         time.sleep(2)
 
-        print("---------Gene Set Enrichment Result---------\n")
-        print(f"Method: {method} Database: {gene_sets}")
-        print(f"{len(genelist)} of genes found enriched in {enr_results.shape[0]} terms.")
-        print("-----END-----")
+        print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
+        print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
+        print(f"{len(genelist)} of genes found enriched in {enr_results.shape[0]} terms.", file=sys.__stdout__)
+        print("-----END-----", file=sys.__stdout__)
         
         return enr_results
 
@@ -70,6 +70,7 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
     bg = {10090:'mmusculus_gene_ensembl', 9606:'hsapiens_gene_ensembl'}
     X = DataSet.clusterobj
     
+    _blockPrint()
     warnings.simplefilter("ignore")
     if method == "gseapy":
         if gene_sets is None:
@@ -88,11 +89,11 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
             enr_results[u].append(enr.results[enr.results['Adjusted P-value']<cutoff])
             time.sleep(2)
 
-        print("---------Gene Set Enrichment Result---------\n")
-        print(f"Method: {method} Database: {gene_sets}")
+        print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
+        print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
         for u,v in enr_results.items():
-            print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]))
-        print("-----END-----")
+            print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]), file=sys.__stdout__)
+        print("-----END-----", file=sys.__stdout__)
         
         return enr_results, None
 
@@ -137,12 +138,11 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
             else:
                 continue
         
-        _enablePrint()
-        print("---------Gene Set Enrichment Result---------\n")
-        print(f"Method: {method} Database: {gene_sets}")
+        print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
+        print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
         for u,v in enr_results.items():
-            print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]))
-        print("-----END-----")
+            print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]), file=sys.__stdout__)
+        print("-----END-----", file=sys.__stdout__)
         
         return enr_results, nease_obj
 
@@ -190,14 +190,13 @@ def modules_gsea(X, clu, taxid, type="PPI", gene_sets=None, cutoff=0.05, method=
                 continue
             
         time.sleep(2)
-        _enablePrint()
 
-    print("---------Gene Set Enrichment Result---------\n")
-    print(f"Method: {method} Database: {gene_sets}")
+    print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
+    print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
     for u,v in enr_results.items():
         for m,vv in v.items():
-            print("Cluster {} Module {}".format(u, m)," found enriched in {} terms.".format(vv[0].shape[0]))
-    print("-----END-----")
+            print("Cluster {} Module {}".format(u, m)," found enriched in {} terms.".format(vv[0].shape[0]), file=sys.__stdout__)
+    print("-----END-----", file=sys.__stdout__)
 
     return enr_results
 
