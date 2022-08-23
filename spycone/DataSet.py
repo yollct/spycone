@@ -63,6 +63,9 @@ class DataSet():
     timepts 
         number of time points
 
+    gtf : (optional)
+        provide corresponding gtf file for mapping gene names 
+
     symbs : (optional)
         list of gene symbols or gene names (can be automatically mapped for human and mouse)
 
@@ -93,6 +96,7 @@ class DataSet():
         keytype,
         reps1,
         timepts,
+        gtf=None,
         gene_id=None,
         transcript_id = None, 
         timeserieslist = None,
@@ -115,12 +119,13 @@ class DataSet():
         self.transcript_id = transcript_id
         self.discretization_steps = discretization_steps
 
-        
+        if not isinstance(self.reps1, list):
+            self.reps1 = [self.reps1]
         #check attributes
         if not hasattr(self.ts, "shape"):
             self.ts[0] = np.array(self.ts[0], dtype="double")
         
-        if self.timepts*self.reps1 != self.ts[0].shape[1]:
+        if self.timepts*self.reps1[0] != self.ts[0].shape[1] or np.sum(self.reps1):
             raise ValueError("Number of columns is not the same as number of time points.")
 
         if self.species not in self.SPECIES:
@@ -162,7 +167,8 @@ class DataSet():
         
 
         tmp = []
-        if reps1 > 1:
+        
+        if self.reps1 > 1:
             tp = self.timepts
             ts = self.ts[0]
             rep = int(self.reps1)
