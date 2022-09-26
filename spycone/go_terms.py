@@ -10,13 +10,14 @@ from logging import raiseExceptions
 import pandas as pd
 import numpy as np
 import os, sys
-import gseapy as gp
+from gprofiler import GProfiler 
 import time
 import warnings
 
 
 sys.path.insert(0, os.path.abspath('./_NEASE/nease/'))
 from ._NEASE.nease import nease
+from ._util_stat.multipletesting import pvalue_correction
 
 # Disable
 def _blockPrint():
@@ -29,7 +30,7 @@ def _enablePrint():
 
 
 
-def list_gsea(genelist, taxid, gene_sets=None, is_results=None, cutoff=0.05, method="gseapy"):
+def list_gsea(genelist, species, gene_sets=None, is_results=None, p_adjust_method="fdr_bh", cutoff=0.05, method="gsea", term_source="all"):
     """
     Perform gene set enrichment on a list of gene
     """
@@ -37,16 +38,20 @@ def list_gsea(genelist, taxid, gene_sets=None, is_results=None, cutoff=0.05, met
     org_map = {10090:'Mouse', 9606:'Human'}
     bg = {10090:'mmusculus_gene_ensembl', 9606:'hsapiens_gene_ensembl'}
 
-    if method == "gseapy":
-        if gene_sets is None:
-            gene_sets = geneset_map[taxid]
+    if method == "gsea":
+    
+        gpro = GProfiler(return_dataframe=True)
+        enrh = gpro.profile(organism=species,
+                query=genelist, no_evidences=False)
         
-        enr = gp.enrichr(gene_list = genelist,
-                        gene_sets = gene_sets,
-                        organism=org_map[taxid],
-                        cutoff=cutoff,
-                        background=bg[taxid]
-                        )
+        mct = pvalue_correction(enrh['p_value'], method=p_adjust_method)
+        enrh['adj_pval'] = mct.corrected_pvals
+        enrh =enrh[enrh['adj_pval']<cutoff]
+
+        enr = pd.concat([enrh])
+        enr = enr.reset_index(drop=True)
+        if term_source != "all":
+            enr_results[u].append(enr[enr['source']=="all"])
         
         enr_results = enr.results[enr.results['Adjusted P-value']<cutoff]
         time.sleep(2)
@@ -59,7 +64,7 @@ def list_gsea(genelist, taxid, gene_sets=None, is_results=None, cutoff=0.05, met
         return enr_results
 
 
-def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, method="nease"):
+def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05, p_adjust_method="fdr_bh", method="nease", term_source="all"):
     """
     Perform gene set enrichment on clusters (cluster object)
 
@@ -72,25 +77,27 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
     
     _blockPrint()
     warnings.simplefilter("ignore")
-    if method == "gseapy":
-        if gene_sets is None:
-            gene_sets = geneset_map[taxid]
-        
+    if method == "gsea":
 
         enr_results = defaultdict(list)
         for u,v in X.symbs_clusters.items():
-            enr = gp.enrichr(gene_list = v,
-                            gene_sets = gene_sets,
-                            organism=org_map[taxid],
-                            cutoff=cutoff,
-                            background=bg[taxid]
-                            )
+            gpro = GProfiler(return_dataframe=True)
+            enrh = gpro.profile(organism=species,
+                    query=X.symbs_clusters[u], no_evidences=False)
             
-            enr_results[u].append(enr.results[enr.results['Adjusted P-value']<cutoff])
+            mct = pvalue_correction(enrh['p_value'], method=p_adjust_method)
+            enrh['adj_pval'] = mct.corrected_pvals
+            enrh =enrh[enrh['adj_pval']<cutoff]
+            enrh['cluster'] = f"Cluster {u}"
+
+            enr = pd.concat([enrh])
+            enr = enr.reset_index(drop=True)
+            if term_source != "all":
+                enr_results[u].append(enr[enr['source']=="all"])
             time.sleep(2)
 
         print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
-        print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
+        print(f"Method: {method} ", file=sys.__stdout__)
         for u,v in enr_results.items():
             print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]), file=sys.__stdout__)
         print("-----END-----", file=sys.__stdout__)
@@ -146,7 +153,7 @@ def clusters_gsea(DataSet, taxid, gene_sets=None, is_results=None, cutoff=0.05, 
         
         return enr_results, nease_obj
 
-def modules_gsea(X, clu, taxid, type="PPI", gene_sets=None, cutoff=0.05, method="nease"):
+def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0.05, method="nease", term_source="all"):
     """
     Perform gene set enrichment on network modules after domino
     """
@@ -157,9 +164,7 @@ def modules_gsea(X, clu, taxid, type="PPI", gene_sets=None, cutoff=0.05, method=
     enr_results = defaultdict(lambda: defaultdict(list))
 
     warnings.simplefilter("ignore")
-    
-    if gene_sets is None:
-        gene_sets = geneset_map[taxid]
+
 
     if isinstance(X, list):
         pass
@@ -175,14 +180,23 @@ def modules_gsea(X, clu, taxid, type="PPI", gene_sets=None, cutoff=0.05, method=
             else:
                 genelist = [mapping[x] for x in list(net.nodes) if x in set(mapping.keys())]
                 
+        
+        
+            gpro = GProfiler(return_dataframe=True)
+            enrh = gpro.profile(organism=species,
+                    query=genelist, no_evidences=False)
             
-            enr = gp.enrichr(gene_list = genelist,
-                            gene_sets = gene_sets,
-                            organism=org_map[taxid],
-                            cutoff=cutoff,
-                            background=bg[taxid]
-                            )
-            
+            mct = pvalue_correction(enrh['p_value'], method=p_adjust_method)
+            enrh['adj_pval'] = mct.corrected_pvals
+            enrh =enrh[enrh['adj_pval']<cutoff]
+            enrh['cluster'] = f"Cluster {u}"
+            enrh['module'] = f"Module {m}"
+
+            enr = pd.concat([enrh])
+            enr = enr.reset_index(drop=True)
+            if term_source != "all":
+                enr_results[cluster][u].append(enr[enr['source']=="all"])
+            time.sleep(2)
 
             try:
                 enr_results[cluster][m].append(enr.results[enr.results['Adjusted P-value']<cutoff])

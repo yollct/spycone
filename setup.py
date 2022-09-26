@@ -11,7 +11,7 @@ from setuptools.command.install import install as InstallCommand
 
 def setup_package():
     metadata = dict(name='spycone',
-    version='0.0.8',
+    version='0.0.9',
     description='A splicing-aware time course network enricher',
     url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
@@ -34,7 +34,7 @@ def setup_package():
       'scikit-learn-extra>=0.1.0',
       'networkx>=2.4',
       'matplotlib>=3.1.3',
-      'gseapy>=0.9.12',
+      'gprofiler',
       'scipy>=1.4.1',
       'statsmodels>=0.11.0',
       'tslearn>=0.5.1.0',
