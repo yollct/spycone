@@ -472,7 +472,7 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
     cluster = int(cluster)
 
     if modules is None:
-        mod_cluster = gsea_result[cluster]
+        mod_cluster = gsea_result[0][cluster]
     else:
         mod_cluster = gsea_result[0][cluster][modules]
 
