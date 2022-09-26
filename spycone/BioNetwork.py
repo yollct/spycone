@@ -164,15 +164,6 @@ class BioNetwork:
 
 
     def _get_connected_nodearray(self):
-        # if self.connected_nodes is None:
-        #     #basically edge list
-        #     network = self.g()
-        #     connected_nodes = list(network.get_edges())
-
-        #     self.connected_nodes = connected_nodes
-        #     return connected_nodes
-        # else:
-        #     return self.connected_nodes
         if "self.connected_nodes" not in locals():
             #basically edge list
             network = self.networkz
