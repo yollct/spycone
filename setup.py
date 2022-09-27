@@ -1,12 +1,6 @@
-from setuptools import setup, find_packages, dist
-import os
-from distutils.core import Extension
-from distutils.command.sdist import sdist as _sdist
-from setuptools import Extension
-import sys
+from setuptools import setup, find_packages
 import pathlib
 
-from setuptools.command.install import install as InstallCommand
 
 README = (pathlib.Path(__file__).parent / "README.md").read_text()
 
