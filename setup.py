@@ -14,7 +14,7 @@ def setup_package():
     version='0.0.9',
     description='A splicing-aware time course network enricher',
     long_description_content_type="text/markdown",
-    long_description="README",
+    long_description=open('README.md', 'r').read(),
     url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
     author_email='ct7298@gmail.com',
