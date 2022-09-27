@@ -92,8 +92,11 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
 
             enr = pd.concat([enrh])
             enr = enr.reset_index(drop=True)
+            
             if term_source != "all":
-                enr_results[u].append(enr[enr['source']=="all"])
+                enr_results[u].append(enr[enr['source']==term_source])
+            else:
+                enr_results[u].append(enr)
             time.sleep(2)
 
         print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
@@ -196,6 +199,8 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
             enr = enr.reset_index(drop=True)
             if term_source != "all":
                 enr_results[cluster][u].append(enr[enr['source']=="all"])
+            else:
+                enr_results[cluster][u].append(enr)
             time.sleep(2)
 
             try:

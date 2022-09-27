@@ -119,13 +119,13 @@ class DataSet():
         self.transcript_id = transcript_id
         self.discretization_steps = discretization_steps
 
-        if not isinstance(self.reps1, list):
-            self.reps1 = [self.reps1]
+        # if not isinstance(self.reps1, list):
+        #     self.reps1 = [self.reps1]
         #check attributes
         if not hasattr(self.ts, "shape"):
             self.ts[0] = np.array(self.ts[0], dtype="double")
-        
-        if self.timepts*self.reps1[0] != self.ts[0].shape[1] or np.sum(self.reps1):
+
+        if self.timepts*self.reps1 != self.ts[0].shape[1]:
             raise ValueError("Number of columns is not the same as number of time points.")
 
         if self.species not in self.SPECIES:
