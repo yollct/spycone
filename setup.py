@@ -7,7 +7,7 @@ import sys
 
 from setuptools.command.install import install as InstallCommand
 
-
+README = (HERE / "README.md").read_text()
 
 def setup_package():
     metadata = dict(name='spycone',
