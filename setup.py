@@ -31,7 +31,7 @@ def setup_package():
       'scikit-learn-extra>=0.1.0',
       'networkx>=2.4',
       'matplotlib>=3.1.3',
-      'gprofiler',
+      'gprofiler-official>=1.0.0',
       'scipy>=1.4.1',
       'statsmodels>=0.11.0',
       'tslearn>=0.5.1.0',
