@@ -4,10 +4,11 @@ from distutils.core import Extension
 from distutils.command.sdist import sdist as _sdist
 from setuptools import Extension
 import sys
+import pathlib
 
 from setuptools.command.install import install as InstallCommand
 
-README = (HERE / "README.md").read_text()
+README = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 def setup_package():
     metadata = dict(name='spycone',
