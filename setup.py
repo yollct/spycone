@@ -13,6 +13,8 @@ def setup_package():
     metadata = dict(name='spycone',
     version='0.0.9',
     description='A splicing-aware time course network enricher',
+    long_description_content_type="text/x-rst",
+    long_description=README,
     url='https://github.com/yollct/spycone.git',
     author='Chit Tong Lio',
     author_email='ct7298@gmail.com',
