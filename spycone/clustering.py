@@ -104,7 +104,6 @@ class clustering(clusterObj):
         self.seed = seed
         self.transform = transform
 
-
         self.kwargs = kwargs
         self.params_init = {}
         self.params_init.update((key, value) for key, value in self.kwargs.items())
@@ -123,25 +122,14 @@ class clustering(clusterObj):
         """
         t1 = time.time()
         
-        if self.input_type == "expression":
-            alltimeseriesobjects = np.array(self.DataSet.timeserieslist, dtype="double")
-            gene_id = self.DataSet.gene_id
-        else:
-            try:
-                alltimeseriesobjects = np.array(self.DataSet.tiu_timeserieslist, dtype="double")
-                gene_id = self.DataSet.tiu_gene_id
-            except ValueError:
-                print("Please run iso.total_isoform_usage() to calculate total isoform usage before clustering.")
-            
+        alltimeseriesobjects, gene_id = self.__get_timeserieslist_and_geneids()
         func = self.CLUSTERING_ALGORITHMS[self.algorithm]       
         simfunc = self.PROTOTYPE[self.prototypefunction]
 
         ###todo###
-
         #combine replicates
         allrep = simfunc(alltimeseriesobjects, axis=0)
         
-
         if self.transform is not None:
             transfunc = self.TRANSFORMATION[self.transform] 
             allrep = transfunc(allrep)
@@ -150,17 +138,7 @@ class clustering(clusterObj):
 
         self.allrep=allrep 
 
-        def _cal_dist_mat(self):
-            if self.metric == "soft_dtw":
-                dist = cdist_soft_dtw(allrep)
-                dist[np.isnan(dist)] = 0
-            else:
-                #compute euclidean/correlation 
-                dist = pairwise_distances(allrep, metric=self.metric)
-                dist[np.isnan(dist)] = 0 
-            return dist
-
-        dist = _cal_dist_mat(self)
+        dist = self.__cal_dist_mat(allrep)
 
         #compute inverse shortest distance 
         if self.composite:
@@ -204,7 +182,7 @@ class clustering(clusterObj):
         self._labels = cluster.labels_+1
         self.silhouette_index = sil
         self.davies_bouldin = db
-        self._map_clusters(self._labels)
+        self.__map_clusters(self._labels)
         self._prototype = {}
         for u,v in self.index_clusters.items():
             self._prototype.update({u: simfunc(allrep[v], axis=0)})
@@ -214,29 +192,47 @@ class clustering(clusterObj):
         print(f"clustering took {time.time()-t1}s. ")
         return self.genelist_clusters
 
+    def __cal_dist_mat(self, allrep):
+        if self.metric == "soft_dtw":
+            dist = cdist_soft_dtw(allrep)
+            dist[np.isnan(dist)] = 0
+        else:
+            #compute euclidean/correlation 
+            dist = pairwise_distances(allrep, metric=self.metric)
+            dist[np.isnan(dist)] = 0 
+        return dist
 
-    def _map_clusters(self, clusterlabel):
+    def __get_timeserieslist_and_geneids(self):
+        if self.input_type == "expression":
+            alltimeseriesobjects = np.array(self.DataSet.timeserieslist, dtype="double")
+            gene_id = self.DataSet.gene_id
+        else:
+            try:
+                alltimeseriesobjects = np.array(self.DataSet.tiu_timeserieslist, dtype="double")
+                gene_id = self.DataSet.tiu_gene_id
+            except ValueError:
+                print("Please run iso.total_isoform_usage() to calculate total isoform usage before clustering.")
+        return(alltimeseriesobjects, gene_id)
+
+    def __map_clusters(self, clusterlabel):
         if self.input_type == "expression":
             genelist = self.DataSet.gene_id
             symbol = self.DataSet.symbs
+            geneindex = range(0, len(genelist))
         else:
             genelist = self.DataSet.tiu_gene_id
             symbol = self.DataSet.tiu_symbs
+            geneindex = range(0, len(genelist))
 
         
         #map clusters to gene list dict
-        self.genelist_clusters = {}
-        self.index_clusters = {}
-        self.symbs_clusters = {}
+        self.genelist_clusters = defaultdict(list)
+        self.index_clusters = defaultdict(list)
+        self.symbs_clusters = defaultdict(list)
         for idx, cluster in enumerate(clusterlabel):
-            if cluster in self.genelist_clusters.keys():
-                self.genelist_clusters[int(cluster)].append(genelist[idx])
-                self.index_clusters[int(cluster)].append(idx)
-                self.symbs_clusters[int(cluster)].append(symbol[idx])
-            else:
-                self.genelist_clusters.update({int(cluster):[genelist[idx]]})
-                self.index_clusters.update({int(cluster):[idx]})
-                self.symbs_clusters.update({int(cluster):[symbol[idx]]})
+            self.genelist_clusters[int(cluster)].append(genelist[idx])
+            self.index_clusters[int(cluster)].append(geneindex[idx])
+            self.symbs_clusters[int(cluster)].append(symbol[idx])
 
         self._final_n_cluster = len(self.genelist_clusters)
 
@@ -266,8 +262,72 @@ class clustering(clusterObj):
         for u,v in self.index_clusters.items():
             self._prototype.update({u: self.PROTOTYPE[self.prototypefunction](self.allrep[v], axis=0)})
 
+    def split_clusters(self, clusters_to_split):
+        """
+        clusters_to_split: input the number of cluster (int)
+        """
+        #get the clusters to split
+        allTimeSeriesObject, allGeneId = self.__get_timeserieslist_and_geneids()
+        thisTimeSeriesObject = allTimeSeriesObject[:,self.index_clusters[clusters_to_split],:]
 
+        print("check sub list", thisTimeSeriesObject.shape)
+        
+        func = self.CLUSTERING_ALGORITHMS[self.algorithm]       
+        simfunc = self.PROTOTYPE[self.prototypefunction]
+        
+        thisReplicates = simfunc(thisTimeSeriesObject, axis=0)
+        print("check rep", thisReplicates.shape)
+        dist = self.__cal_dist_mat(thisReplicates)
+        np.fill_diagonal(dist, 0) #return none
 
+        ###TODO functionalize this bunch of code (?)
+        if self.algorithm == "hierarchical" and self.linkage != "ward":
+            cluster = func(affinity="precomputed", linkage=self.linkage, n_clusters=self.n_clusters).fit(dist)
+            #sil = silhouette_score(dist, cluster.labels_, metric="precomputed")
+
+        elif self.algorithm == "hierarchical" and self.linkage=="ward":
+            cluster = func(affinity="euclidean", linkage=self.linkage, n_clusters=self.n_clusters).fit(thisReplicates)
+            #sil = silhouette_score(allrep, cluster.labels_, metric="euclidean")
+
+        elif self.algorithm == "kmedoids":
+            cluster = func(n_clusters=self.n_clusters).fit(dist)
+            #sil =  silhouette_score(dist, cluster.labels_, metric="precomputed")
+        
+        elif self.algorithm == "kmeans" and self.metric == "soft_dtw":
+            func = TimeSeriesKMeans
+            cluster = func(n_clusters=self.n_clusters, metric="softdtw").fit(thisReplicates)
+            #sil = tssilhouette_score(allrep, cluster.labels_, metric="softdtw", n_jobs=5)
+
+        else:
+            cluster = func(metric=self.metric, **self.kwargs).fit(thisReplicates)
+            #sil = silhouette_score(dist, cluster.labels_, metric="precomputed")
+        
+        maxclu = np.max(list(self.genelist_clusters))
+        sub_genelist_clusters = defaultdict(list)
+        sub_index_clusters = defaultdict(list)
+        sub_symbs_clusters = defaultdict(list)
+        for idx, cluster in enumerate(cluster.labels_+1):
+            sub_genelist_clusters[int(cluster)].append(self.genelist_clusters[clusters_to_split][idx])
+            sub_index_clusters[int(cluster)].append(self.index_clusters[clusters_to_split][idx])
+            sub_symbs_clusters[int(cluster)].append(self.symbs_clusters[clusters_to_split][idx])
+
+        ##remove the original cluster
+        del self.genelist_clusters[clusters_to_split]
+        del self.index_clusters[clusters_to_split]
+        del self.symbs_clusters[clusters_to_split]
+
+        ##combine the clusters
+        for u,v in sub_genelist_clusters.items():
+            for x in range(len(v)):
+                self.genelist_clusters[u+maxclu].append(v[x])
+                self.index_clusters[u+maxclu].append(sub_index_clusters[u][x])
+                self.symbs_clusters[u+maxclu].append(sub_symbs_clusters[u][x])
+
+        #update prototype
+        self._prototype = {}
+        for u,v in self.index_clusters.items():
+            print(u,v)
+            self._prototype.update({u: self.PROTOTYPE[self.prototypefunction](self.allrep[v], axis=0)})
 
     # def calculate_pvalue(self, object_type = "clusters", n_permutations=1000, fitness_scores_two_sided = True):
     #     cal = compute_pvalues.basic_pvalue(testobject=self.DataSet, object_type = object_type, n_permutations = n_permutations, fitness_scores_two_sided = fitness_scores_two_sided)
