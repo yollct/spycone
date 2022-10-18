@@ -1,4 +1,4 @@
-.. autoclass:: {{ objname }}
+.. autoclass:: {{ name }}.{{ objname }}
    
     {% block methods %}
     {% if methods %}
