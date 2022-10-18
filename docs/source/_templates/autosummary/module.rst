@@ -5,7 +5,7 @@
 .. automodule:: {{ fullname }}
     :members:
 
-.. currentmodule:: {{ fullname }}
+.. currentmodule:: {{ objname }}
 
 {% if classes %}
 .. rubric:: Classes
