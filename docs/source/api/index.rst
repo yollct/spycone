@@ -12,10 +12,8 @@ Import:
 
 Input dataset
 --------
-.. currentmodule:: spycone.BioNetwork
-
 .. autosummary::
-    dataset
+    spycone.DataSet.dataset
 
 BioNetwork
 ------------
