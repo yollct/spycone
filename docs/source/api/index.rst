@@ -18,7 +18,7 @@ Input dataset
     :template: ./_templates/class.rst 
     :toctree: generated  
 
-    DataSet
+    dataset
 
 BioNetwork
 ------------
