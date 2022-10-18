@@ -1,5 +1,3 @@
-.. currentmodule:: spycone
-
 API
 ====
 
