@@ -54,7 +54,7 @@ def list_gsea(genelist, species, gene_sets=None, is_results=None, p_adjust_metho
         time.sleep(2)
 
         print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
-        print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
+        print(f"Method: {method}", file=sys.__stdout__)
         print(f"{len(genelist)} of genes found enriched in {enr_results.shape[0]} terms.", file=sys.__stdout__)
         print("-----END-----", file=sys.__stdout__)
         
