@@ -1,13 +1,9 @@
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
-import pandas as pd
 import scipy.stats
 import matplotlib.colors as mcolors
 import random
 
-from ..inputdata.DataSet import DataSet
-from ..inputdata.BioNetwork import BioNetwork
 #from stat.pq_val import _cal_pqvals
 
 def _plot_mean_and_CI(mean, lb, ub, tps, clus, color_mean=None, color_shading=None,  xlab="Time points", ylab="Gene expression"):

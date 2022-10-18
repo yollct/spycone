@@ -7,10 +7,7 @@ import sys
 from scipy.stats import chi2
 
 sys.path.insert(0, "../")
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 from .._feature import get_features as fea
-from .._fitness.fitness_score import fitness_score
 from .._shuffle import shuffle
 
 from .. import clustering

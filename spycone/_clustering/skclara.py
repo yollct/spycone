@@ -1,23 +1,13 @@
-import pandas as pd
 import numpy as np
-import time
 import random
-import warnings
-import logging
+
 from collections import defaultdict
 from sklearn.cluster import *
 from sklearn_extra.cluster import KMedoids
-from sklearn.metrics.cluster import adjusted_rand_score
-
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 #from similarity.calculate_similarities import calculate_similarities_timeseriesobj_to_medoid, calculate_similarities_clusterobject, calculate_center_medoid
 from .._prototype.prototype_builder import _prototype_builder
-from ....archive.qc import _qc_silhouette
-from ..clustering import clustering
-from .build_cluster import _add_obj_to_most_sim_cluster, cluster_map_to_item, merge_above_similarity_threshold_clusters
+from .build_cluster import cluster_map_to_item
 from .clusterobj import clusterObj
-from . import similarities as sim
 
 class clara(clusterObj):
     def __init__(self, DataSet, n_cluster, n_start, metric="euclidean",prototypefunction = "median", n_samples=5,

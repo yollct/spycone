@@ -1,13 +1,4 @@
-import pandas as pd
 import numpy as np
-import time
-import random
-import warnings
-
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
-from .scaler import tanhnormalizer_scaler
-from .._feature.get_features import featuresObj
 
 class fitness_score():
     def __init__(self, featureObj):

@@ -1,7 +1,6 @@
 import numpy as np 
 import gc
 
-
 class pvalue_correction():
     def __init__(self, pvals, method, alpha = 0.05):
         self.pvals= np.sort(pvals) # sort pvals in ascending order

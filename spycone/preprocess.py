@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 
 def remove_object_notin_network(DataSet, BioNetwork):

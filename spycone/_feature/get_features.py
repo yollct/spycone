@@ -1,12 +1,7 @@
-import pandas as pd
 import numpy as np
-import time
-import random
 import warnings
 from joblib import Parallel, delayed
 
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 from .._clustering.similarities import intra_clusters_similarity
 from .._prototype.prototype_builder import _prototype_builder
 

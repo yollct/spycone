@@ -1,12 +1,7 @@
 import pandas as pd
 import numpy as np
-import random
-import warnings
-import logging
 import itertools as it
 
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 #from . import similarities as sim
 
 #from similarities import calculate_similarities_timeseriesobj_to_medoid, calculate_center_medoid

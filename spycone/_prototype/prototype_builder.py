@@ -1,9 +1,4 @@
-import pandas as pd
 import numpy as np
-import time
-
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 
 def _prototype_builder(timeseriesobj, clusters, prototype_func):
     '''

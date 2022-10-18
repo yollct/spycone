@@ -1,11 +1,5 @@
 import pandas as pd
 import numpy as np
-import time
-import random
-import warnings
-
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 
 def tanhnormalizer_scaler(feature, seed=1222):
     scaled_feature = []
