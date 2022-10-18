@@ -1,7 +1,5 @@
-.. rubric:: Description
 
 {% if functions %}
-.. rubric:: Functions
 
 .. autosummary::
     :toctree: .
