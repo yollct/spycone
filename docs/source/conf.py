@@ -21,7 +21,7 @@ for x in os.walk('../../spycone'):
   sys.path.insert(0, x[0])
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
-
+import spycone 
 
 # -- Project information -----------------------------------------------------
 
