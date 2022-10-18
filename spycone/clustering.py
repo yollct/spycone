@@ -176,7 +176,7 @@ class clustering(clusterObj):
             cluster = func(metric=self.metric, **self.kwargs).fit(allrep)
             #sil = silhouette_score(dist, cluster.labels_, metric="precomputed")
 
-        sil = silhouette_score(allrep, cluster.labels_, metric="euclidean")
+        sil = silhouette_score(allrep, cluster.labels_, metric=self.metric)
         db = davies_bouldin_score(allrep, cluster.labels_)
         
         self._labels = cluster.labels_+1
@@ -262,40 +262,50 @@ class clustering(clusterObj):
         for u,v in self.index_clusters.items():
             self._prototype.update({u: self.PROTOTYPE[self.prototypefunction](self.allrep[v], axis=0)})
 
-    def split_clusters(self, clusters_to_split):
+        ## update silhouette score
+        new_label=[]
+        new_index=[]
+        for u,v in self.index_clusters.items():
+            for x in v:
+                new_label.append(u)
+                new_index.append(x)
+
+        new_df = pd.DataFrame({"label": new_label, "ind": new_index})
+        new_df.sort_values('ind')
+        self.silhouette_index = silhouette_score(self.allrep, new_df['label'].to_list(), metric=self.metric)
+        #self.silhouette_index = silhouette_score(self.allrep, cluster.labels_, metric="euclidean")
+
+    def split_clusters(self, clusters_to_split, n_sub=5):
         """
         clusters_to_split: input the number of cluster (int)
         """
         #get the clusters to split
         allTimeSeriesObject, allGeneId = self.__get_timeserieslist_and_geneids()
         thisTimeSeriesObject = allTimeSeriesObject[:,self.index_clusters[clusters_to_split],:]
-
-        print("check sub list", thisTimeSeriesObject.shape)
         
         func = self.CLUSTERING_ALGORITHMS[self.algorithm]       
         simfunc = self.PROTOTYPE[self.prototypefunction]
         
         thisReplicates = simfunc(thisTimeSeriesObject, axis=0)
-        print("check rep", thisReplicates.shape)
         dist = self.__cal_dist_mat(thisReplicates)
         np.fill_diagonal(dist, 0) #return none
 
         ###TODO functionalize this bunch of code (?)
         if self.algorithm == "hierarchical" and self.linkage != "ward":
-            cluster = func(affinity="precomputed", linkage=self.linkage, n_clusters=self.n_clusters).fit(dist)
+            cluster = func(affinity="precomputed", linkage=self.linkage, n_clusters=n_sub).fit(dist)
             #sil = silhouette_score(dist, cluster.labels_, metric="precomputed")
 
         elif self.algorithm == "hierarchical" and self.linkage=="ward":
-            cluster = func(affinity="euclidean", linkage=self.linkage, n_clusters=self.n_clusters).fit(thisReplicates)
+            cluster = func(affinity="euclidean", linkage=self.linkage, n_clusters=n_sub).fit(thisReplicates)
             #sil = silhouette_score(allrep, cluster.labels_, metric="euclidean")
 
         elif self.algorithm == "kmedoids":
-            cluster = func(n_clusters=self.n_clusters).fit(dist)
+            cluster = func(n_clusters=n_sub).fit(dist)
             #sil =  silhouette_score(dist, cluster.labels_, metric="precomputed")
         
         elif self.algorithm == "kmeans" and self.metric == "soft_dtw":
             func = TimeSeriesKMeans
-            cluster = func(n_clusters=self.n_clusters, metric="softdtw").fit(thisReplicates)
+            cluster = func(n_clusters=n_sub, metric="softdtw").fit(thisReplicates)
             #sil = tssilhouette_score(allrep, cluster.labels_, metric="softdtw", n_jobs=5)
 
         else:
@@ -326,8 +336,19 @@ class clustering(clusterObj):
         #update prototype
         self._prototype = {}
         for u,v in self.index_clusters.items():
-            print(u,v)
             self._prototype.update({u: self.PROTOTYPE[self.prototypefunction](self.allrep[v], axis=0)})
+
+        ## update silhouette score
+        new_label=[]
+        new_index=[]
+        for u,v in self.index_clusters.items():
+            for x in v:
+                new_label.append(u)
+                new_index.append(x)
+
+        new_df = pd.DataFrame({"label": new_label, "ind": new_index})
+        new_df.sort_values('ind')
+        self.silhouette_index = silhouette_score(self.allrep, new_df['label'].to_list(), metric="euclidean")
 
     # def calculate_pvalue(self, object_type = "clusters", n_permutations=1000, fitness_scores_two_sided = True):
     #     cal = compute_pvalues.basic_pvalue(testobject=self.DataSet, object_type = object_type, n_permutations = n_permutations, fitness_scores_two_sided = fitness_scores_two_sided)

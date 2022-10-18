@@ -7,7 +7,6 @@ from functools import reduce
 
 from .DOMINO.src.core import domino
 from .DOMINO.src.core import preprocess_slices as sl
-from .DataSet import DataSet
 from .clustering import clustering
 
 def _combine_pvals(pvals):

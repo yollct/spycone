@@ -35,7 +35,7 @@ def _map_trans_to_gene(keys, keytype, species, transid_type = None):
     return a
 
 ##dataset and settings
-class DataSet():
+class dataset():
     """ 
     Input dataset.
 
