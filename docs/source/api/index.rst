@@ -15,11 +15,6 @@ Input dataset
 BioNetwork
 ------------
 .. currentmodule:: spycone.BioNetwork
-
-.. autosummary::
-    :template: ./_templates/class.rst
-    :toctree: generated
-
     BioNetwork
 
 preprocess
