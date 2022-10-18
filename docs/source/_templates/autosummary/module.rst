@@ -1,9 +1,4 @@
-{{ objname | escape | underline }}
-
 .. rubric:: Description
-
-.. currentmodule:: {{ objname }}
-
 
 {% if functions %}
 .. rubric:: Functions
