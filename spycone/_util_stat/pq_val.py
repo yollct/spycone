@@ -1,11 +1,6 @@
-import pandas as pd
 import numpy as np
-import time
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
-
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 
 def _cal_pqvals(DataSet):
     clu_val = DataSet.use_clu[0]

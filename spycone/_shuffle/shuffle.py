@@ -1,12 +1,5 @@
-import pandas as pd
 import numpy as np
-import time
 import random
-import warnings
-import itertools as it
-
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
 
 class shuffling():
     def __init__(self, timeserieslist=None, shuffle_timeseries=None):

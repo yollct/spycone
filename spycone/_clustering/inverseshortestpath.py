@@ -4,9 +4,6 @@ import numpy as np
 from joblib import Parallel, delayed
 import itertools as it
 
-from ..DataSet import DataSet
-from ..BioNetwork import BioNetwork
-
 #compute pairwise network location similarity
 #input as gene node names, corresponding to time series index and network node names
 

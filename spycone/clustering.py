@@ -4,16 +4,11 @@ import time
 from functools import reduce
 from collections import defaultdict
 from sklearn.cluster import *
-from sklearn.metrics.cluster import adjusted_rand_score
 from sklearn.metrics import pairwise_distances, silhouette_score
 from tslearn.metrics import cdist_soft_dtw
 from tslearn.clustering import TimeSeriesKMeans
-from tslearn.clustering import silhouette_score as tssilhouette_score
 from sklearn.metrics import davies_bouldin_score
 
-from ._prototype.prototype_builder import _prototype_builder
-#from ._util_stat.qc import _qc_silhouette
-from ._clustering.build_cluster import cluster_map_to_item
 from ._clustering.kmedoids import KMedoids
 from ._clustering.clusterobj import clusterObj
 # from ._util_stat import compute_pvalues 
