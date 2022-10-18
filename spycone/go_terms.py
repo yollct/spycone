@@ -34,9 +34,6 @@ def list_gsea(genelist, species, gene_sets=None, is_results=None, p_adjust_metho
     """
     Perform gene set enrichment on a list of gene
     """
-    geneset_map = {10090:['KEGG_2019_Mouse'], 9606:['KEGG_2019_Human']}
-    org_map = {10090:'Mouse', 9606:'Human'}
-    bg = {10090:'mmusculus_gene_ensembl', 9606:'hsapiens_gene_ensembl'}
 
     if method == "gsea":
     
@@ -68,11 +65,11 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
     """
     Perform gene set enrichment on clusters (cluster object)
 
+    Parameters:
+    ------------
+    gene_sets : needed when method is "nease", input one of the database : 'PharmGKB','HumanCyc','Wikipathways','Reactome','KEGG','SMPDB','Signalink','NetPath','EHMN','INOH','BioCarta','PID'
+
     """
-    
-    geneset_map = {10090:['KEGG_2019_Mouse'], 9606:['KEGG_2019_Human']}
-    org_map = {10090:'Mouse', 9606:'Human'}
-    bg = {10090:'mmusculus_gene_ensembl', 9606:'hsapiens_gene_ensembl'}
     X = DataSet.clusterobj
     
     _blockPrint()
@@ -160,10 +157,7 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
     """
     Perform gene set enrichment on network modules after domino
     """
-    geneset_map = {10090:['KEGG_2019_Mouse'], 9606:['KEGG_2019_Human']}
     mapping = dict(zip(clu.DataSet.gene_id, clu.DataSet.symbs))
-    org_map = {10090:'Mouse', 9606:'Human'}
-    bg = {10090:'mmusculus_gene_ensembl', 9606:'hsapiens_gene_ensembl'}
     enr_results = defaultdict(lambda: defaultdict(list))
 
     warnings.simplefilter("ignore")
@@ -211,7 +205,7 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
         time.sleep(2)
 
     print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
-    print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
+    print(f"Method: {method}", file=sys.__stdout__)
     for u,v in enr_results.items():
         for m,vv in v.items():
             print("Cluster {} Module {}".format(u, m)," found enriched in {} terms.".format(vv[0].shape[0]), file=sys.__stdout__)
@@ -219,14 +213,14 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
 
     return enr_results
 
-def list_genesets(organism):
-    """
-    Return a list of gene sets database
+# def list_genesets(organism):
+#     """
+#     Return a list of gene sets database
 
-    Parameters
-    -----------
-    organism:
-        human, mouse, etc.
-    """
-    return gp.get_library_name(organism)
+#     Parameters
+#     -----------
+#     organism:
+#         human, mouse, etc.
+#     """
+#     return gp.get_library_name(organism)
 
