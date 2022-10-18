@@ -3,9 +3,6 @@
     {% block methods %}
     {% if methods %}
     .. rubric:: Methods
-
-    .. autosummary::
-        :toctree: 
         
         {% for item in methods %}
             {%- if item != '__init__' %}
