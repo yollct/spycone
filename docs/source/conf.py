@@ -21,8 +21,6 @@ for x in os.walk('../../spycone'):
   sys.path.insert(0, x[0])
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
-import sphinx_rtd_theme
-import spycone
 
 
 # -- Project information -----------------------------------------------------
