@@ -2,9 +2,6 @@
 
 .. rubric:: Description
 
-.. automodule:: {{ objname }}
-    :members:
-
 .. currentmodule:: {{ objname }}
 
 {% if classes %}
