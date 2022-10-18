@@ -34,7 +34,7 @@ def setup_package():
       'gprofiler-official>=1.0.0',
       'scipy>=1.4.1',
       'statsmodels>=0.11.0',
-      'tslearn>=0.5.1.0',
+      'tslearn>=0.5.2',
       'python-louvain',
       'plotly>=4.14.3',
       'biopython',
