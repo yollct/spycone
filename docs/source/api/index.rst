@@ -12,7 +12,6 @@ Import:
 
 Input dataset
 --------
-.. currentmodule:: spycone.DataSet
 
 .. autosummary:: 
     :template: ./_templates/class.rst 
