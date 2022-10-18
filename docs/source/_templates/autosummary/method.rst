@@ -1,3 +1,3 @@
-{{ name }}.{{ objname | escape | underline }}
+{{ objname | escape | underline }}
 
 .. automethod:: {{ objname }}

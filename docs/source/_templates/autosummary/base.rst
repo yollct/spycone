@@ -1,4 +1,4 @@
-{{ fullname | escape | underline }}
+{{ objname | escape | underline }}
 
 {% extends "!autosummary/base.rst" %}
 
