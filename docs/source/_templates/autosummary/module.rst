@@ -1,8 +1,8 @@
-{{ name }}.{{ objname | escape | underline }}
+{{ objname | escape | underline }}
 
 .. rubric:: Description
 
-.. automodule:: {{ name }}.{{ objname }}
+.. automodule:: {{ objname }}
     :members:
 
 .. currentmodule:: {{ objname }}

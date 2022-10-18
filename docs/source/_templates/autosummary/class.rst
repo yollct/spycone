@@ -1,4 +1,4 @@
-.. autoclass:: {{ name }}.{{ objname }}
+.. autoclass:: {{ objname }}
    
     {% block methods %}
     {% if methods %}
@@ -9,7 +9,7 @@
         
         {% for item in methods %}
             {%- if item != '__init__' %}
-            ~{{ fullname }}.{{ item }}
+            ~{{ objname }}.{{ item }}
             {%- endif -%}
         {%- endfor %}
         {% endif %}
