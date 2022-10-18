@@ -1,7 +1,8 @@
-{% if functions %}
+.. autofunction:: {{ objname }}
+    {% if functions %}
 
-    {% for function in functions %}
-    {{ function }}
-    {% endfor %}
+        {% for function in functions %}
+        {{ function }}
+        {% endfor %}
 
-{% endif %}
+    {% endif %}

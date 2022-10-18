@@ -12,8 +12,7 @@ Import:
 
 Input dataset
 --------
-.. autosummary::
-    spycone.DataSet.dataset
+
 
 BioNetwork
 ------------
