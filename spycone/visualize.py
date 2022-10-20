@@ -8,6 +8,7 @@ import os
 import pickle
 
 from ._clustering.clusterobj import clusterObj
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Titles = "Cluster {col_name}", xtickslabels=None, **kwargs):
     """
@@ -468,19 +469,18 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
     nterms : int 
         (optional) if you would like to visualize only subset of terms e.g. the top 10 terms 
     """
-    cluster = int(cluster)
 
     if modules is None:
-        mod_cluster = gsea_result[0][cluster]
+        mod_cluster = gsea_result[cluster]
     else:
-        mod_cluster = gsea_result[0][cluster][modules]
+        mod_cluster = gsea_result[cluster][modules]
 
     if isinstance(mod_cluster, dict):
         subset = pd.DataFrame(mod_cluster[0])
     else: 
         if mod_cluster[0].shape[0]>0:
             subset = pd.DataFrame(mod_cluster[0])
-            subset = subset.sort_values(['Adjusted P-value'])
+            subset = subset.sort_values(['adj_pval'])
 
         else:
             print("This gsea has no result.")
@@ -489,7 +489,7 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
         subset = subset.head(nterms)
 
     plt.figure(figsize=(subset.shape[0],12))
-    subset['-log10(adjusted p-value)'] = -np.log10(subset['Adjusted P-value'])
+    subset['-log10(adjusted p-value)'] = -np.log10(subset['adj_pval'])
     sns.barplot(y="Term", x="-log10(adjusted p-value)", data=subset, color="salmon")
     if modules is not None:
         plt.title(f"Cluster {cluster} Module {modules}")
@@ -579,7 +579,7 @@ def _make_dot(edges, mapping, ascov, html, related_genes):
     isgene = ascov['gene'].unique()
     nxnet = nx.Graph(list(edges.edges))
     nxdot = nx.drawing.nx_pydot.to_pydot(nxnet)
-    infile = open(os.path.join("./spycone_pkg/spycone/data/network/network_human_PPIDDI.tab.pkl"),'rb')
+    infile = open(os.path.join(dir_path, "./data/network/network_human_PPIDDI.tab.pkl"),'rb')
     jointgraph = pickle.load(infile)
     def map_entrez2symb(x):
         if int(x) in mapping.keys():
@@ -670,7 +670,7 @@ def vis_better_modules(dataset, mod, cluster, dir, related_genes=set(), module=N
     """
     ascov1 = dataset.isoobj.is_result 
     #ascov1['gene'] = list(map(str, list(map(lambda x: int(x) if not np.isnan(x) else x, ascov1['gene']))))
-    mapping = pickle.load(open("/nfs/proj/spycone/spycone_pkg/spycone/data/entrez2symb.pkl", "rb"))
+    mapping = pickle.load(open(os.path.join(dir_path, "data/entrez2symb.pkl", "rb")))
 
     if module:
         edges = mod[cluster][0][module]
