@@ -1,1 +1,4 @@
-.. autofunction:: {{ objname }}
+{{ name }}
+{{ underline }}
+
+.. autofunction:: {{ name }}
