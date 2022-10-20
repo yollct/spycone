@@ -47,7 +47,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autosummary',
     "sphinx_rtd_theme",
-#    "nbsphinx",
+    "nbsphinx",
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.ifconfig', 'sphinx.ext.viewcode',

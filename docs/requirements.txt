@@ -1,6 +1,6 @@
 sphinx
 sphinx_rtd_theme
-nbsphinx>=0.8.9
+nbsphinx
 #To use markdown
 commonmark==0.9.1
 recommonmark==0.6.0
