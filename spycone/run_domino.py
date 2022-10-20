@@ -1,4 +1,5 @@
 import networkx as nx
+import os
 from collections import defaultdict
 from scipy.stats import chi2
 import numpy as np
@@ -8,6 +9,8 @@ from functools import reduce
 from .DOMINO.src.core import domino
 from .DOMINO.src.core import preprocess_slices as sl
 from .clustering import clustering
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def _combine_pvals(pvals):
         chisqprob = lambda chisq, df: chi2.sf(chisq, df)
@@ -42,7 +45,7 @@ def _affected_domains(targets, ascov):
   
             
             
-def run_domain_domino(target, is_results, name=None, scores = None, network_file = "data/network/network_human_PPIDDI.tab", output_file_path = "./slices/slices.txt", 
+def run_domain_domino(target, is_results, name=None, scores = None, network_file = os.path.join(dir_path,"data/network/network_human_PPIDDI.tab"), output_file_path = "slices.txt", 
                 run_cluster=None, slice_threshold=0.3, module_threshold=0.05, prize_factor = 0, n_steps=20):
     '''
     Parameters
@@ -166,7 +169,7 @@ def run_domain_domino(target, is_results, name=None, scores = None, network_file
     
 
 
-def run_domino(target, name=None, is_results=None, scores = None, network_file = "data/network/mouse_biogrid_entrez.tab", output_file_path = "./slices/slices.txt", 
+def run_domino(target, name=None, is_results=None, scores = None, network_file = os.path.join(dir_path,"data/network/mouse_biogrid_entrez.tab"), output_file_path = "./slices/slices.txt", 
                 run_cluster=None, slice_threshold=0.3, module_threshold=0.05, prize_factor = 0, n_steps=20):
     '''
     Parameters

@@ -29,9 +29,18 @@ def _enablePrint():
 
 
 
-def list_gsea(genelist, species, gene_sets=None, is_results=None, p_adjust_method="fdr_bh", cutoff=0.05, method="gsea", term_source="all"):
+def list_gsea(genelist, species, gene_sets=None,  p_adjust_method="fdr_bh", cutoff=0.05, method="gsea", term_source="all"):
     """
     Perform gene set enrichment on a list of gene
+
+    Parameters: 
+    -------------
+    genelist
+    species: input taxonomy ID if method is "nease", species name for "gsea" (e.g. hsapiens, mmusculus...)
+    gene_sets: input a valid database name for "nease", ignore for "gsea"
+    p_adjust_method: input one of the following: "fdr_bh", "bonf", "holm_bonf"
+    cutoff: for adjusted p-value
+
     """
 
     if method == "gsea":
@@ -66,7 +75,25 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
 
     Parameters:
     ------------
-    gene_sets : needed when method is "nease", input one of the database : 'PharmGKB','HumanCyc','Wikipathways','Reactome','KEGG','SMPDB','Signalink','NetPath','EHMN','INOH','BioCarta','PID'
+    DataSet: Spycone dataset object
+
+    species: input taxonomy ID if method is "nease", species name for "gsea" (e.g. hsapiens, mmusculus...)
+
+    p_adjust_method: input one of the following: "fdr_bh", "bonf", "holm_bonf"
+
+    cutoff: for adjusted p-value
+
+    gene_sets : needed when method is "nease", input one of the database : 
+    'PharmGKB','HumanCyc','Wikipathways','Reactome','KEGG','SMPDB','Signalink','NetPath','EHMN','INOH','BioCarta','PID'
+
+    method: "nease" or "gsea"
+
+    Return:
+    -------
+    It returns two objects:
+
+    0. Dictionary containing the enrichment dataframes for each cluster. 
+    1. If method is "nease", it returns nease object in the second object. For "gsea", it returns None.
 
     """
     X = DataSet.clusterobj
@@ -88,6 +115,7 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
 
             enr = pd.concat([enrh])
             enr = enr.reset_index(drop=True)
+            enr.rename(columns={'name':'Term'}, inplace=True)
             
             if term_source != "all":
                 enr_results[u].append(enr[enr['source']==term_source])
