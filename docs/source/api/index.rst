@@ -7,96 +7,64 @@ Import:
 
     import spycone as spy
 
+.. toctree::
+   :caption: Contents:
 
-Input dataset
---------
+Import dataset
+--------------
+.. currentmodule:: spycone
+
+.. autoclass::
+    dataset
 
 
-BioNetwork
+Import and store biological network
 ------------
-.. currentmodule:: spycone.BioNetwork
+
+.. autoclass::
     BioNetwork
 
-preprocess
+Preprocessing 
 -----------
-.. currentmodule:: spycone.preprocess
 
-.. autosummary::
-    :template: ./_templates/module.rst
-    :toctree: generated
-
+.. autoclass::
     preprocess
-        
 
-iso_function
+
+Isoform-level function
 -------------
-.. currentmodule:: spycone.iso
 
-.. autosummary::
-    :template: ./_templates/class.rst
-    :toctree: generated/
-
-    iso_function
+.. autoclass:: iso_function
 
 
-clustering
+Clustering alogrithms
 ------------
-.. currentmodule:: spycone.clustering
 
-.. autosummary::
-    :template: ./_templates/class.rst
-    :toctree: generated/
-
+.. autoclass::
     clustering
 
-go_terms
+
+Perform GO term enrichment
 ----------
-.. currentmodule:: spycone.go_terms
 
-.. autosummary:: 
-    :template: function.rst
-    :toctree: generated/
-
-    list_gsea
-    clusters_gsea
-    modules_gsea
-    list_genesets
+.. autofunction:: list_gsea
+.. autofunction:: clusters_gsea
+.. autofunction:: modules_gsea
     
  
-run_domino
+Run DOMINO 
 -----------
-.. currentmodule:: spycone.run_domino
 
-.. autosummary:: 
-    :template: ./_templates/function.rst
-    :toctree: generated/
-
-    spycone.run_domino.run_domino
-    spycone.run_domino.run_domain_domino
+.. autofunction:: run_domino
+.. autofunction:: run_domain_domino
 
 
-visualize
+Visualization functions
 -----------
-.. currentmodule:: spycone.visualize
 
-.. autosummary::
-    :template: ./_templates/function.rst
-    :toctree: generated/
+.. autofunction:: vis_all_clusters
+.. autofunction:: switch_plot
+.. autofunction:: gsea_plot
 
-    spycone.visualize.vis_all_clusters
-    spycone.visualize.switch_plot
-    spycone.visualize.gsea_plot
-
-
-Splicing factor analysis
--------------
-.. currentmodule:: spycone.splicingfactor
-
-.. autosummary::
-    :template: ./_templates/class.rst
-    :toctree: generated/
-
-    spycone.splicingfactor.SF_coexpression
-    spycone.splicingfactor.SF_motifsearch
 
     

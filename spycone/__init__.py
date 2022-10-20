@@ -1,5 +1,5 @@
 from .BioNetwork import BioNetwork
-from .DataSet import dataset as DataSet
+from .DataSet import dataset 
 from .clustering import clustering
 from .iso import iso_function
 from .preprocess import preprocess

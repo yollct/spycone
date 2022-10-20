@@ -1,1 +1,1 @@
-.. automethod:: {{ objname }}
+.. automethod:: {{ name }}
