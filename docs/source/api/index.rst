@@ -7,16 +7,17 @@ Import:
 
     import spycone as spy
 
+.. currentmodule:: spycone
 
 Import dataset
 --------
-.. currentmodule:: spycone
-
 .. autoclass:: dataset
+    
 
 Import and store biological network
 ------------
 .. autoclass:: BioNetwork
+
 
 Preprocessing
 -----------
@@ -26,7 +27,7 @@ Preprocessing
         
 
 Isoform-level function
--------------
+------------------------
 
 .. autoclass:: iso_function
 
