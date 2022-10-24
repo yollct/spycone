@@ -498,6 +498,22 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
 
 
 def vis_modules(mods, dataset, cluster, size=5, outputpng=None):
+    """
+    Visualize all modules from one cluster in one figure. 
+
+    Parameters:
+    ------------
+    mods: modules result
+
+    dataset: spycone dataset object
+
+    cluster: cluster number to visualize
+
+    size: minimum number of nodes in one module
+
+    outputpng: file path to save the figure (png) 
+
+    """
     if hasattr(dataset, "isoobj"):
         ascov = dataset.isoobj.is_result
     else:

@@ -130,9 +130,6 @@ def run_domain_domino(target, is_results, name=None, scores = None, network_file
 
         a=defaultdict(list)
         for u,v in target.genelist_clusters.items():
-            
-
-            
             #scoresdf.to_csv("/nfs/home/students/chit/lrz_ticone/domino_emp/{}_cluster{}_mod.csv".format(name, u), index=False)
             ### 
             checkedtarget = _check_nodes(list(map(str,v)), network_file)
@@ -164,10 +161,6 @@ def run_domain_domino(target, is_results, name=None, scores = None, network_file
                 print(f"Cluster {u} Module {e} has {len(vv)} nodes.")
         print("-----END-----")        
         return a 
-
-
-    
-
 
 def run_domino(target, name=None, is_results=None, scores = None, network_file = os.path.join(dir_path,"data/network/mouse_biogrid_entrez.tab"), output_file_path = "./slices/slices.txt", 
                 run_cluster=None, slice_threshold=0.3, module_threshold=0.05, prize_factor = 0, n_steps=20):

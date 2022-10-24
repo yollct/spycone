@@ -13,7 +13,6 @@ from gprofiler import GProfiler
 import time
 import warnings
 
-
 sys.path.insert(0, os.path.abspath('./_NEASE/nease/'))
 from ._NEASE.nease import nease
 from ._util_stat.multipletesting import pvalue_correction
@@ -25,9 +24,6 @@ def _blockPrint():
 # Restore
 def _enablePrint():
     sys.stdout = sys.__stdout__
-
-
-
 
 def list_gsea(genelist, species, gene_sets=None,  p_adjust_method="fdr_bh", cutoff=0.05, method="gsea", term_source="all"):
     """
@@ -163,10 +159,10 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
                 nease_enr=events.enrich(database=gene_sets)
 
                 if nease_enr is not None:
-                    nease_enr=nease_enr.rename(columns = {'adj p_value':'Adjusted P-value'})
+                    nease_enr=nease_enr.rename(columns = {'adj p_value':'adj_pval'})
                     nease_enr=nease_enr.rename(columns = {'Pathway name':'Term'})
                     nease_obj[u].append(events)
-                    enr_results[u].append(nease_enr[nease_enr['Adjusted P-value']<cutoff])
+                    enr_results[u].append(nease_enr[nease_enr['adj_pval']<cutoff])
                 else:
                     continue
             else:
@@ -225,7 +221,7 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
             time.sleep(2)
 
             try:
-                enr_results[cluster][m].append(enr.results[enr.results['Adjusted P-value']<cutoff])
+                enr_results[cluster][m].append(enr.results[enr.results['adj_pval']<cutoff])
             except:
                 continue
             
