@@ -163,10 +163,10 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
                 nease_enr=events.enrich(database=gene_sets)
 
                 if nease_enr is not None:
-                    nease_enr=nease_enr.rename(columns = {'adj p_value':'adj_pval'})
+                    nease_enr=nease_enr.rename(columns = {'adj p_value':'Adjusted P-value'})
                     nease_enr=nease_enr.rename(columns = {'Pathway name':'Term'})
                     nease_obj[u].append(events)
-                    enr_results[u].append(nease_enr[nease_enr['adj_pval']<cutoff])
+                    enr_results[u].append(nease_enr[nease_enr['Adjusted P-value']<cutoff])
                 else:
                     continue
             else:
