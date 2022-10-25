@@ -11,6 +11,7 @@ warnings.simplefilter("ignore")
 from collections import defaultdict
 
 from ._util_stat.multipletesting import pvalue_correction
+from ._util_stat.spline_regression import get_natural_cubic_spline_model
 from ._feature import featuresObj 
 from ._shuffle import shuffling
 # Disable
@@ -305,7 +306,7 @@ class iso_function():
                 groupdict[sym]['trans_id'].append(self.dataset.transcript_id[idx])
                 groupdict[sym]['indices'].append(idx)
                 groupdict[sym]['array'].append(self.dataset.timeserieslist[:,idx,:])
-        
+
         #normlize work
         for sym, df in groupdict.items():
             org = df['array'][0]
@@ -591,7 +592,7 @@ class iso_function():
         return majoriso, minoriso, gain_exons, loss_exons, nondiff
         
                 
-    def detect_isoform_switch(self, filtering = True, prob_cutoff=0.5, corr_cutoff=0.5, event_im_cutoff = 0.1, min_diff = 0.05, p_val_cutoff = 0.05, n_permutations=100, adjustp='fdr_bh', diff_domain=True):
+    def detect_isoform_switch(self, filtering = True, prob_cutoff=0.5, corr_cutoff=0.5, event_im_cutoff = 0.1, min_diff = 0.05, p_val_cutoff = 0.05, n_permutations=100, adjustp='fdr_bh', diff_domain=True, spline=False):
         """
         Detect isoform switching events along time series.
         
@@ -613,11 +614,28 @@ class iso_function():
         self.transcript_id = self.dataset.transcript_id
         self.symbs = self.dataset.symbs
         self.gene_id = self.dataset.gene_id
+        self.spline = spline
         if filtering==True:
             lowgenes = self._remove_low_expressed()
         else:
             lowgenes=set()
         print(str(len(set(lowgenes))) + " of genes with low expression are filtered out!!.")
+
+        if self.spline == True:
+            print("Modelling with natural spline regression...")
+            tsdata = self.dataset.timeserieslist
+            times = [np.arange(1,self.dataset.timepts+1) for _ in range(self.dataset.reps1)]
+            ftimes = np.concatenate(times)
+            fitted_data = np.zeros(shape=(tsdata.shape))
+            for i in range(tsdata.shape[1]):
+                fitted_data[:,i,:] = get_natural_cubic_spline_model(ftimes, np.concatenate(tsdata[:,i,:]), n_knots=3).reshape(self.dataset.reps1, self.dataset.timepts)
+
+            # store the fitted values in fitted_dict   
+            for idx, sym in enumerate(self.dataset.gene_id):
+                if sym != 'n':
+                    self.normdf[sym]['fitted_val'].append(fitted_data[:,idx,:])
+            del tsdata
+
 
         print(f"calculating for {len(self.normdf.keys())} genes...")
               
@@ -625,9 +643,11 @@ class iso_function():
         iso_dict_info = defaultdict(tuple)
         for gene, values in self.normdf.items():
             idxs = values['indices']
-            thisnormdf = values['normarr']
+            if self.spline==True:
+                thisnormdf = np.array(values['fitted_val']).reshape(self.dataset.reps1, len(idxs), self.dataset.timepts)
+            else:
+                thisnormdf = values['normarr']
             thisexp = values['array']
-
             
             # maj = np.argmax(np.median(np.median(thisexp, axis=0), axis=1))
             # secondmaj = None
