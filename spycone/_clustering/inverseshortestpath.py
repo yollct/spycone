@@ -1,7 +1,6 @@
 import networkx as nx
 import pandas as pd
 import numpy as np
-from joblib import Parallel, delayed
 import itertools as it
 
 #compute pairwise network location similarity
