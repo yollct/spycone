@@ -14,6 +14,14 @@ Spycone is a python package that provides systematic analysis of time course tra
 Installation
 *************
 
+Prerequisite
+
+Spycone is dependent on the pcst_fast library, which is not available through pip install. Please go to [the github page](https://github.com/fraenkel-lab/pcst_fast) or run this command.
+
+
+   pip install https://github.com/fraenkel-lab/pcst_fast/archive/refs/tags/1.0.7.tar.gz
+
+
 To install Spycone::
 
    pip install spycone
