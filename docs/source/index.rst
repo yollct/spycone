@@ -16,8 +16,7 @@ Installation
 
 Prerequisite
 
-Spycone is dependent on the pcst_fast library, which is not available through pip install. Please go to [the github page](https://github.com/fraenkel-lab/pcst_fast) or run this command.
-
+Spycone is dependent on the pcst_fast library, which is not available through pip install. Please go to `the github page <https://github.com/fraenkel-lab/pcst_fast>`_ or run this command.::
 
    pip install https://github.com/fraenkel-lab/pcst_fast/archive/refs/tags/1.0.7.tar.gz
 
