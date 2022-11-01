@@ -24,7 +24,7 @@ def remove_nodes_notin_dataset(DataSet, BioNetwork):
     #     if i not in tmpg:
     #         nodes_to_remove.append(i)
 
-    nodes_to_remove = nodelist[[np.array(np.isin(BioNetwork.lst_g(), DataSet.gene_id, invert=True))]]
+    nodes_to_remove = nodelist[np.array(np.isin(BioNetwork.lst_g(), DataSet.gene_id, invert=True))]
 
     BioNetwork._removing_nodes(list(nodes_to_remove))
 
