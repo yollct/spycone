@@ -162,7 +162,7 @@ def run_domain_domino(target, is_results, name=None, scores = None, network_file
         print("-----END-----")        
         return a 
 
-def run_domino(target, name=None, is_results=None, scores = None, network_file = os.path.join(dir_path,"data/network/mouse_biogrid_entrez.tab"), output_file_path = "./slices/slices.txt", 
+def run_domino(target, name=None, is_results=None, scores = None, network_file = os.path.join(dir_path,"data/network/mouse_biogrid_entrez.tab"), output_file_path = "./slices.txt", 
                 run_cluster=None, slice_threshold=0.3, module_threshold=0.05, prize_factor = 0, n_steps=20):
     '''
     Parameters
