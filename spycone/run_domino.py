@@ -169,18 +169,20 @@ def run_domino(target, name=None, is_results=None, scores = None, network_file =
     -----------
     target :
         clustering object from spycone or gene list in entrez ID
-    is_results : DataFrame
+        
+    is_results (Optional) : DataFrame 
         Data Frame of isoform switch detection result
-    scores : None
+        
+    scores (Optional) : None
         activity scores of the genes (e.g. p-values from differential expression analysis)
 
-    run_cluster :
+    run_cluster (Optional):
         Specify the cluster name if you only want to run a specific cluster
 
-    Network file : str
+    Network file: Spycone biological network object or str
         default: "data/network/network_human_PPIDDI.tab"
 
-    output file path
+    output_file_path:
         default: output slices file for DOMINO.
         
     slice_threshold : float
