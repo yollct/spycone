@@ -352,10 +352,13 @@ class iso_function():
             if any(points):
                 final_sp = multiple_intersect(points) 
                 if not any(final_sp):
-                    final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,rep_agree)]
-                    final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
-                    if not any(final_sp):
-                        final_sp = []
+                    if rep_agree==1:
+                        final_sp=[]
+                    else:
+                        final_sp = [list(set(x[0]).intersection(set(x[1]))) for x in combinations(points,rep_agree)]
+                        final_sp = np.unique(reduce(lambda x,y: x+y, final_sp))
+                        if not any(final_sp):
+                            final_sp = []
             
 
                 final_sp = np.sort(final_sp)
@@ -628,18 +631,6 @@ class iso_function():
             thisnormdf = values['normarr']
             thisexp = values['array']
 
-            
-            # maj = np.argmax(np.median(np.median(thisexp, axis=0), axis=1))
-            # secondmaj = None
-            # if thisnormdf.shape[1] > 2:
-            #     ##get second maj isoform
-            #     secondmaj = np.argsort(np.median(np.median(thisexp, axis=0), axis=1))[-2]
-
-            # self.normdf[gene]['majs'].append(maj)
-            # self.normdf[gene]['majs'].append(secondmaj)
-            #calculate correlations
-            #corrmat= self.correlation_coef(thisnormdf, maj)
-
             #calculate isoform ratio
             res_maj = self._isoform_differential_usage(thisnormdf, thisexp)
 
@@ -672,23 +663,9 @@ class iso_function():
 
                             if diff_domain == True:
                                 iso_pairs_id['exclusive_domains'].append(self._exclusive_domain(self.transcript_id[idxs[ids1]],self.transcript_id[idxs[ids2]]))
-                            # iso_dict_info[self.isoform_id[idxs[res_maj[3]]]] = (gene, res_maj[3])
-                            # iso_dict_info[self.isoform_id[idxs[ids]]] = (gene, ids)
 
 
             else:
-                 #p-values is calculated 
-                # for ids, iso_ratio in enumerate(res_maj[0]):
-                #     if iso_ratio >0 :
-                #         iso_pairs_id['gene'].append(gene)
-                #         iso_pairs_id['major_transcript'].append(self.transcript_id[idxs[res_maj[3]]])
-                #         iso_pairs_id['minor_transcript'].append(self.transcript_id[idxs[ids]])
-                #         iso_pairs_id['iso_ratio'].append(iso_ratio)
-                #         iso_pairs_id['diff'].append(res_maj[4][ids])
-                #         iso_pairs_id['corr'].append(res_maj[6][ids])
-                #         iso_pairs_id['final_sp'].append(res_maj[5][ids])
-                #         iso_dict_info[self.transcript_id[idxs[res_maj[3]]]] = (gene, res_maj[3])
-                #         iso_dict_info[self.transcript_id[idxs[ids]]] = (gene, ids)
 
                 for ids1, iso_ratio0 in enumerate(res_maj[0]):
                     for ids2, iso_ratio in enumerate(iso_ratio0):
@@ -726,25 +703,25 @@ class iso_function():
 
             self.isopairs = iso_pairs_id
 
-        res = pd.DataFrame(iso_pairs_id).sort_values('p_value')
-        mct = pvalue_correction(res['p_value'], method=adjustp)
-        res['adj_pval'] = mct.corrected_pvals
+        res = pd.DataFrame(iso_pairs_id)#.sort_values('p_value')
+        # mct = pvalue_correction(res['p_value'], method=adjustp)
+        # res['adj_pval'] = mct.corrected_pvals
 
-        res = res[(res['switch_prob']>prob_cutoff) & (res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
-        res = res.sort_values("switch_prob", ascending=False).drop_duplicates(['major_transcript', 'minor_transcript'])
-        print("----Result statistics----")
-        print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
-        print(f"Events found: {res.shape[0]}")
-        print(f"Events with affecting domains: {np.sum([1 for x in res[  'exclusive_domains'] if len(x)>0])}")
-        print(f"Mean event importance: {res['event_importance'].mean()}")
-        print(f"Mean difference before and after switch: {res['diff'].mean()}")
-        print("--------------------------")
-        print("DONE")
+        # res = res[(res['switch_prob']>prob_cutoff) & (res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
+        # res = res.sort_values("switch_prob", ascending=False).drop_duplicates(['major_transcript', 'minor_transcript'])
+        # print("----Result statistics----")
+        # print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
+        # print(f"Events found: {res.shape[0]}")
+        # print(f"Events with affecting domains: {np.sum([1 for x in res[  'exclusive_domains'] if len(x)>0])}")
+        # print(f"Mean event importance: {res['event_importance'].mean()}")
+        # print(f"Mean difference before and after switch: {res['diff'].mean()}")
+        # print("--------------------------")
+        # print("DONE")
         
         self.is_result = res
         self.dataset.isoobj = self
 
-        return res.reset_index(drop=True)[['gene', 'gene_symb', 'major_transcript', 'minor_transcript', 'switch_prob', 'corr', 'diff', 'event_importance', 'exclusive_domains', 'p_value', 'adj_pval']]
+        return res#.reset_index(drop=True)[['gene', 'gene_symb', 'major_transcript', 'minor_transcript', 'switch_prob', 'corr', 'diff', 'event_importance', 'exclusive_domains', 'p_value', 'adj_pval']]
 
 
     def _isoform_usage(self, eachgene, norm):

@@ -138,3 +138,4 @@ docs/source/alt_sorted_bc_tpm.csv
 docs/source/exons.gtf
 docs/source/newslices.txt
 docs/source/normticonerhino_wide.csv
+*.gaf

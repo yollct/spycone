@@ -98,7 +98,7 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
     warnings.simplefilter("ignore")
     if method == "gsea":
 
-        enr_results = defaultdict(list)
+        enr_results = defaultdict(object)
         for u,v in X.symbs_clusters.items():
             gpro = GProfiler(return_dataframe=True)
             enrh = gpro.profile(organism=species,
@@ -114,9 +114,9 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
             enr.rename(columns={'name':'Term'}, inplace=True)
             
             if term_source != "all":
-                enr_results[u].append(enr[enr['source']==term_source])
+                enr_results[u]=enr[enr['source']==term_source]
             else:
-                enr_results[u].append(enr)
+                enr_results[u]=enr
             time.sleep(2)
 
         print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
@@ -142,8 +142,8 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
             raise ValueError("Please provide the result dataframe of isoform switch detection for nease enrichment.")
 
         _blockPrint()
-        enr_results = defaultdict(list)
-        nease_obj = defaultdict(list)
+        enr_results = defaultdict(object)
+        nease_obj = defaultdict(object)
         for u,v in X.genelist_clusters.items():
             subset = is_results[is_results['gene'].astype(str).isin(list(map(lambda x: str(int(x)), v)))]
             nease_input = []
@@ -161,8 +161,8 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
                 if nease_enr is not None:
                     nease_enr=nease_enr.rename(columns = {'adj p_value':'adj_pval'})
                     nease_enr=nease_enr.rename(columns = {'Pathway name':'Term'})
-                    nease_obj[u].append(events)
-                    enr_results[u].append(nease_enr[nease_enr['adj_pval']<cutoff])
+                    nease_obj[u]=events
+                    enr_results[u]=nease_enr[nease_enr['adj_pval']<cutoff]
                 else:
                     continue
             else:
@@ -181,7 +181,7 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
     Perform gene set enrichment on network modules after domino
     """
     mapping = dict(zip(clu.DataSet.gene_id, clu.DataSet.symbs))
-    enr_results = defaultdict(lambda: defaultdict(list))
+    enr_results = defaultdict(lambda: defaultdict(object))
 
     warnings.simplefilter("ignore")
 
@@ -215,13 +215,13 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
             enr = pd.concat([enrh])
             enr = enr.reset_index(drop=True)
             if term_source != "all":
-                enr_results[cluster][u].append(enr[enr['source']=="all"])
+                enr_results[cluster][u]=enr[enr['source']=="all"]
             else:
-                enr_results[cluster][u].append(enr)
+                enr_results[cluster][u]=enr
             time.sleep(2)
 
             try:
-                enr_results[cluster][m].append(enr.results[enr.results['adj_pval']<cutoff])
+                enr_results[cluster][m]=enr.results[enr.results['adj_pval']<cutoff]
             except:
                 continue
             

@@ -6,11 +6,14 @@ import seaborn as sns
 from functools import reduce
 import os
 import pickle
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
 
 from ._clustering.clusterobj import clusterObj
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Titles = "Cluster {col_name}", xtickslabels=None, **kwargs):
+def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Titles = "Cluster {col_name}", xtickslabels=None, col_wrap=1, plot_clusters=None, ncol=None, nrow=None, **kwargs):
     """
     Visualize all the clusters with cluster prototype
 
@@ -47,20 +50,21 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         #if value returns infinite , set it as 0
         median_allts[~np.isfinite(median_allts)]=0
         
-    
+    if plot_clusters is None:
+        plot_clusters = list(clusterObj.keys())
 
     ##faster probably
     reorder = []
     clusters = []
     for cluster, cluster_obj in clusterObj.index_clusters.items():
-        for v in cluster_obj:
-            reorder.append(v)
-            clusters.append(cluster)
+        if cluster in set(plot_clusters):
+            for v in cluster_obj:
+                reorder.append(v)
+                clusters.append(cluster)
 
     precluster_tsarray = pd.DataFrame(median_allts)
     precluster_tsarray.columns = ["tp{}".format(x) for x in range(tp)]
     cluster_tsarray = precluster_tsarray.iloc[reorder,:].reset_index(drop=True)
-    
     clusters_sns = pd.concat([pd.Series(clusters,name="clusters"),cluster_tsarray], axis=1)
     clusters_sns = pd.melt(clusters_sns, id_vars="clusters",value_vars=cluster_tsarray.columns, value_name="expression",var_name="timepoints", ignore_index=False)
     clusters_sns['gene'] = clusters_sns.index
@@ -71,30 +75,55 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     cluster_pro.columns = ["tp{}".format(x) for x in range(tp)]
     cluster_pro['clusters'] = list(clusterObj.symbs_clusters.keys())
     cluster_pro = pd.melt(cluster_pro, id_vars='clusters', value_vars=cluster_pro.columns.to_list()[:-1], value_name="expression", var_name="timepoints")
- 
+    cluster_pro = cluster_pro[cluster_pro['clusters'].isin(plot_clusters)]
     # allsns = pd.concat(cluster_sns_list)
     # sns.relplot(x="timepoints", y="expression",kind="line", hue="cluster", col="cluster",col_wrap=5,  height=3, aspect=.75, linewidth=2.5, palette= "Set2", data=allsns)
 
-    grey = ['lightgray'] * len(clusterObj.genelist_clusters.keys())
-    g = sns.relplot(data=clusters_sns, x="timepoints", y="expression", col="clusters", hue="clusters",
-    units="gene", kind="line", height=3, aspect=.75,estimator=None, linewidth=1, palette=grey, legend=False, **kwargs)
+    grey = ['lightgray'] * len(plot_clusters)
+    #g = sns.relplot(data=clusters_sns, x="timepoints", y="expression", col="clusters", hue="clusters", units="gene", kind="line", height=3, aspect=.75,estimator=None, linewidth=1, palette=grey, legend=False, **kwargs)
+    if ncol is None:
+        ncol = len(plot_clusters)
+        nrow =1 
 
-    g.set_axis_labels(x_label, y_label, fontsize=13)
-    g.set_titles(Titles)
-    if xtickslabels:
-        g.set_xticklabels(labels=xtickslabels,rotation=90, ha="right", fontsize=8)
+    fig = px.line(clusters_sns, x="timepoints", y="expression", color="gene", facet_col="clusters", width=300, height=300*len(plot_clusters), facet_col_wrap= col_wrap)
+    pro = px.line(cluster_pro, x="timepoints", y="expression", color="clusters", facet_col="clusters", width=300, height=300*len(plot_clusters), facet_col_wrap= col_wrap)
+
+    fig.update_traces(line_color="lightgray")
+    for x in range(len(plot_clusters)):
+        fig.add_trace(pro.data[x])
+    fig.update_traces(showlegend=False)
+    fig.update_traces(hoverinfo='skip')
+    # print(clusters_sns.head())
+    # fig = make_subplots(rows=nrow, cols=ncol, shared_yaxes=False, specs=[[{'type':'scatter'}]*len(plot_clusters)])
+    # sr = 1
+    # sc = 1
+    # for x, thisclu in enumerate(plot_clusters):
+    #     x+=1
+    #     tmp=clusters_sns[clusters_sns['clusters']==thisclu].reset_index(drop=True)
+    #     subfig=px.line(tmp, x="timepoints", y="expression", color=tmp["gene"])
+    #     subfig.update_traces({"line":{"color":"lightgray"}})
+    #     fig.add_trace(subfig, row=sr, col=sc)
+    #     if x % ncol == 0:
+    #         sr+=1
+    #     else:
+    #         sc+=1
+        
+
+    #g.set_axis_labels(x_label, y_label, fontsize=13)
+    #g.set_titles(Titles)
+    # if xtickslabels:
+    #     g.set_xticklabels(labels=xtickslabels,rotation=90, ha="right", fontsize=8)
 
     ##plot prototypes
     #g = sns.relplot(data=cluster_pro, x="timepoints", y="expression", kind="line", col="clusters",hue="clusters",col_wrap=3, height=3, aspect=.75, linewidth=4, palette="Set2")
-    pal = sns.color_palette("dark", len(clusterObj.genelist_clusters.keys()))
-    i=0
-    for x,ax in g.axes_dict.items():
-        subdata = cluster_pro[cluster_pro['clusters']==x]
+    # pal = sns.color_palette("dark", len(clusterObj.genelist_clusters.keys()))
+    # i=0
+    # for x,ax in g.axes_dict.items():
+    #     subdata = cluster_pro[cluster_pro['clusters']==x]
         
-        sns.lineplot(data=subdata, x="timepoints", y="expression", linewidth=4, color=pal[i], ax=ax, legend=False)
-        i+=1
-
-    plt.show()
+    #     sns.lineplot(data=subdata, x="timepoints", y="expression", linewidth=4, color=pal[i], ax=ax, legend=False)
+    #     i+=1
+    return fig
 
 
 
@@ -475,15 +504,11 @@ def gsea_plot(gsea_result, cluster, modules=None, nterms=None):
     else:
         mod_cluster = gsea_result[cluster][modules]
 
-    if isinstance(mod_cluster, dict):
-        subset = pd.DataFrame(mod_cluster[0])
-    else: 
-        if mod_cluster[0].shape[0]>0:
-            subset = pd.DataFrame(mod_cluster[0])
-            subset = subset.sort_values(['adj_pval'])
-
-        else:
-            print("This gsea has no result.")
+    if mod_cluster.shape[0]>0:
+        subset = pd.DataFrame(mod_cluster)
+        subset = subset.sort_values(['adj_pval'])
+    else:
+        print("This gsea has no result.")
 
     if nterms:
         subset = subset.head(nterms)
@@ -614,9 +639,11 @@ def _make_dot(edges, mapping, ascov, html, related_genes):
         nxdot.get_node(n)[0].obj_dict['attributes']['style'] = "filled"
         nxdot.get_node(n)[0].obj_dict['attributes']['fontname'] = "verdana"
         if str(n) in set(isgene):
-            nxdot.get_node(n)[0].obj_dict['attributes']['fillcolor'] = "#CFA3EA"
+            nxdot.get_node(n)[0].obj_dict['attributes']['fillcolor'] = "#008081"
+            nxdot.get_node(n)[0].obj_dict['attributes']['fontcolor'] = "#ffffff"
         else:
-           nxdot.get_node(n)[0].obj_dict['attributes']['fillcolor'] = "#FBA27B"
+           nxdot.get_node(n)[0].obj_dict['attributes']['fillcolor'] = "#B2D8D9"
+           nxdot.get_node(n)[0].obj_dict['attributes']['fontcolor'] = "#000000"
     
     ##check if interaction is affected
     alledges = [nxdot.get_edges()[x].obj_dict['points'] for x in range(len(nxdot.get_edges()))]
@@ -686,7 +713,7 @@ def vis_better_modules(dataset, mod, cluster, dir, related_genes=set(), module=N
     """
     ascov1 = dataset.isoobj.is_result 
     #ascov1['gene'] = list(map(str, list(map(lambda x: int(x) if not np.isnan(x) else x, ascov1['gene']))))
-    mapping = pickle.load(open(os.path.join(dir_path, "data/entrez2symb.pkl", "rb")))
+    mapping = pickle.load(open(os.path.join(dir_path, "data/entrez2symb.pkl"), "rb"))
 
     if module:
         edges = mod[cluster][0][module]
