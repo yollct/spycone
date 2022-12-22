@@ -448,8 +448,14 @@ class iso_function():
 
                 for bp in range(1, len(tmp_sw)-1):
                     #if len(switch_points) != bp+1:
-                    iso1_pval = mannwhitneyu(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0], arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0])
-                    iso2_pval = mannwhitneyu(arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0], arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0])
+                    try:
+                        ##if the exp before switch is zero expressions
+                        iso1_pval = mannwhitneyu(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0], arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0])
+                        iso2_pval = mannwhitneyu(arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0], arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0])
+                    except:
+                        iso1_pval=[1,1]
+                        iso2_pval=[1,1]
+                        
                     thisdiff = np.mean([abs(np.mean(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]]) - np.mean(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]])), abs(np.mean(arr2[:,tmp_sw[bp-1]:tmp_sw[bp]]) - np.mean(arr2[:,tmp_sw[bp]:tmp_sw[bp+1]]))])
                     thisenrich = self._event_enrichness(normdf, tmp_sw[bp], arr1, arr2)
                     iso_prob = ((np.sum(arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]>arr2[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0]))/arr1[:,tmp_sw[bp-1]:tmp_sw[bp]].reshape(1,-1)[0].shape[0]) + ((np.sum(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]<arr2[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0]))/(arr1[:,tmp_sw[bp]:tmp_sw[bp+1]].reshape(1,-1)[0].shape[0]))
@@ -523,7 +529,6 @@ class iso_function():
                 ##finding switch points, correlation
                
                 iso_ratio[maj, x], allsp, final_sp, corr_list[maj, x] = self._iso_switch_between_arrays(arr1, arr2, orgarr1, orgarr2)
-          
                 ##calculate diff. value, p-values
                 iso_diff_value[maj, x], maj_pval[maj, x], min_pval[maj, x], bs, enrichness[maj,x], iso_prob[maj, x] = self._diff_before_after_switch(thisnormdf, arr1, arr2, allsp, final_sp)
                 
@@ -702,26 +707,30 @@ class iso_function():
             iso_pairs_id['p_value'] = pval
 
             self.isopairs = iso_pairs_id
+        
+        if pd.DataFrame(iso_pairs_id).shape[0]==0:
+            print("We didn't found any significant switch.")
+            return None 
+        
+        res = pd.DataFrame(iso_pairs_id).sort_values('p_value')
+        mct = pvalue_correction(res['p_value'], method=adjustp)
+        res['adj_pval'] = mct.corrected_pvals
 
-        res = pd.DataFrame(iso_pairs_id)#.sort_values('p_value')
-        # mct = pvalue_correction(res['p_value'], method=adjustp)
-        # res['adj_pval'] = mct.corrected_pvals
-
-        # res = res[(res['switch_prob']>prob_cutoff) & (res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
-        # res = res.sort_values("switch_prob", ascending=False).drop_duplicates(['major_transcript', 'minor_transcript'])
-        # print("----Result statistics----")
-        # print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
-        # print(f"Events found: {res.shape[0]}")
-        # print(f"Events with affecting domains: {np.sum([1 for x in res[  'exclusive_domains'] if len(x)>0])}")
-        # print(f"Mean event importance: {res['event_importance'].mean()}")
-        # print(f"Mean difference before and after switch: {res['diff'].mean()}")
-        # print("--------------------------")
-        # print("DONE")
+        res = res[(res['switch_prob']>prob_cutoff) & (res['diff']>min_diff) & (res['adj_pval']<p_val_cutoff) & (res['corr']>corr_cutoff) & (res['event_importance']>event_im_cutoff)]
+        res = res.sort_values("switch_prob", ascending=False).drop_duplicates(['major_transcript', 'minor_transcript'])
+        print("----Result statistics----")
+        print(f"Total genes with IS genes: {res['gene'].unique().shape[0]}")
+        print(f"Events found: {res.shape[0]}")
+        print(f"Events with affecting domains: {np.sum([1 for x in res[  'exclusive_domains'] if len(x)>0])}")
+        print(f"Mean event importance: {res['event_importance'].mean()}")
+        print(f"Mean difference before and after switch: {res['diff'].mean()}")
+        print("--------------------------")
+        print("DONE")
         
         self.is_result = res
         self.dataset.isoobj = self
 
-        return res#.reset_index(drop=True)[['gene', 'gene_symb', 'major_transcript', 'minor_transcript', 'switch_prob', 'corr', 'diff', 'event_importance', 'exclusive_domains', 'p_value', 'adj_pval']]
+        return res.reset_index(drop=True)[['gene', 'gene_symb', 'major_transcript', 'minor_transcript', 'switch_prob', 'corr', 'diff', 'event_importance', 'exclusive_domains', 'p_value', 'adj_pval']]
 
 
     def _isoform_usage(self, eachgene, norm):

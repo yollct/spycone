@@ -122,7 +122,7 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
         print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
         print(f"Method: {method} ", file=sys.__stdout__)
         for u,v in enr_results.items():
-            print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]), file=sys.__stdout__)
+            print("Cluster {}".format(u)," found enriched in {} terms.".format(v.shape[0]), file=sys.__stdout__)
         print("-----END-----", file=sys.__stdout__)
         
         return enr_results, None
@@ -171,7 +171,7 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
         print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
         print(f"Method: {method} Database: {gene_sets}", file=sys.__stdout__)
         for u,v in enr_results.items():
-            print("Cluster {}".format(u)," found enriched in {} terms.".format(v[0].shape[0]), file=sys.__stdout__)
+            print("Cluster {}".format(u)," found enriched in {} terms.".format(v.shape[0]), file=sys.__stdout__)
         print("-----END-----", file=sys.__stdout__)
         
         return enr_results, nease_obj
