@@ -51,7 +51,14 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         median_allts[~np.isfinite(median_allts)]=0
         
     if plot_clusters is None:
-        plot_clusters = list(clusterObj.keys())
+        plot_clusters = list(clusterObj.index_clusters.keys())
+        return_plotly=False
+        width = 100*len(plot_clusters)
+        height=500
+    else:
+        return_plotly =True
+        width=300
+        height=300*len(plot_clusters)
 
     ##faster probably
     reorder = []
@@ -68,6 +75,7 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     clusters_sns = pd.concat([pd.Series(clusters,name="clusters"),cluster_tsarray], axis=1)
     clusters_sns = pd.melt(clusters_sns, id_vars="clusters",value_vars=cluster_tsarray.columns, value_name="expression",var_name="timepoints", ignore_index=False)
     clusters_sns['gene'] = clusters_sns.index
+    clusters_sns['type']="object"
     clusters_sns = clusters_sns.reset_index()
 
     #for prototype
@@ -75,24 +83,37 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     cluster_pro.columns = ["tp{}".format(x) for x in range(tp)]
     cluster_pro['clusters'] = list(clusterObj.symbs_clusters.keys())
     cluster_pro = pd.melt(cluster_pro, id_vars='clusters', value_vars=cluster_pro.columns.to_list()[:-1], value_name="expression", var_name="timepoints")
+    cluster_pro['type']="prototype"
+    cluster_pro['gene']=cluster_pro.index
     cluster_pro = cluster_pro[cluster_pro['clusters'].isin(plot_clusters)]
     # allsns = pd.concat(cluster_sns_list)
     # sns.relplot(x="timepoints", y="expression",kind="line", hue="cluster", col="cluster",col_wrap=5,  height=3, aspect=.75, linewidth=2.5, palette= "Set2", data=allsns)
-
-    grey = ['lightgray'] * len(plot_clusters)
-    #g = sns.relplot(data=clusters_sns, x="timepoints", y="expression", col="clusters", hue="clusters", units="gene", kind="line", height=3, aspect=.75,estimator=None, linewidth=1, palette=grey, legend=False, **kwargs)
     if ncol is None:
         ncol = len(plot_clusters)
         nrow =1 
+        
+    if not return_plotly:
+        grey = ['lightgray'] * len(plot_clusters)
 
-    fig = px.line(clusters_sns, x="timepoints", y="expression", color="gene", facet_col="clusters", width=300, height=300*len(plot_clusters), facet_col_wrap= col_wrap)
-    pro = px.line(cluster_pro, x="timepoints", y="expression", color="clusters", facet_col="clusters", width=300, height=300*len(plot_clusters), facet_col_wrap= col_wrap)
+        g = sns.relplot(data=clusters_sns, x="timepoints", y="expression", col="clusters", hue="clusters", units="gene", kind="line", height=3, aspect=.75,estimator=None, linewidth=1, palette=grey, legend=False, col_wrap=col_wrap, **kwargs)
+        pal = sns.color_palette("dark", len(clusterObj.genelist_clusters.keys()))
+        i=0
+        for x,ax in g.axes_dict.items():
+            subdata = cluster_pro[cluster_pro['clusters']==x]
+            
+            sns.lineplot(data=subdata, x="timepoints", y="expression", linewidth=4, color=pal[i], ax=ax, legend=False)
+            i+=1
+    
+    else:
+        fig = px.line(clusters_sns, x="timepoints", y="expression", color="gene", facet_col="clusters", width=width, height=height, facet_col_wrap= col_wrap)
+        pro = px.line(cluster_pro, x="timepoints", y="expression", color="clusters", facet_col="clusters", width=width, height=height, facet_col_wrap= col_wrap)
 
-    fig.update_traces(line_color="lightgray")
-    for x in range(len(plot_clusters)):
-        fig.add_trace(pro.data[x])
-    fig.update_traces(showlegend=False)
-    fig.update_traces(hoverinfo='skip')
+        fig.update_traces(line_color='lightgrey')
+        for x in range(len(plot_clusters)):
+            fig.add_trace(pro.data[x])
+        fig.update_traces(showlegend=False)
+        fig.update_traces(hoverinfo='skip')
+    
     # print(clusters_sns.head())
     # fig = make_subplots(rows=nrow, cols=ncol, shared_yaxes=False, specs=[[{'type':'scatter'}]*len(plot_clusters)])
     # sr = 1
@@ -115,15 +136,13 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     #     g.set_xticklabels(labels=xtickslabels,rotation=90, ha="right", fontsize=8)
 
     ##plot prototypes
-    #g = sns.relplot(data=cluster_pro, x="timepoints", y="expression", kind="line", col="clusters",hue="clusters",col_wrap=3, height=3, aspect=.75, linewidth=4, palette="Set2")
-    # pal = sns.color_palette("dark", len(clusterObj.genelist_clusters.keys()))
-    # i=0
-    # for x,ax in g.axes_dict.items():
-    #     subdata = cluster_pro[cluster_pro['clusters']==x]
+    # g = sns.relplot(data=cluster_pro, x="timepoints", y="expression", kind="line", col="clusters",hue="clusters",col_wrap=3, height=3, aspect=.75, linewidth=4, palette="Set2")
+    
         
-    #     sns.lineplot(data=subdata, x="timepoints", y="expression", linewidth=4, color=pal[i], ax=ax, legend=False)
-    #     i+=1
-    return fig
+    if return_plotly:
+        return fig
+    else:
+        return g
 
 
 
