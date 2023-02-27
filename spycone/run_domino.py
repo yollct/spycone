@@ -212,18 +212,18 @@ def run_domino(target, name=None, is_results=None, scores = None, network_file =
     
 
     sl.create_slices(network_file, output_file_path)
-    # if isinstance(target, list):
-    #     ##check list    
-    #     checkedtarget = _check_nodes(list(map(str,target)), network_file)
+    if isinstance(target, list):
+        ##check list    
+        checkedtarget = _check_nodes(list(map(str,target)), network_file)
 
-    #     ## clusterobj can also be list
-    #     a = defaultdict(list)
+        ## clusterobj can also be list
+        a = defaultdict(list)
 
-    #     tmp, scores = domino.main(list(map(str,checkedtarget)), network_file, slices_file=output_file_path, slice_threshold=slice_threshold,  module_threshold=module_threshold, prize_factor=prize_factor, n_steps=n_steps)
-    #     a[name].append(tmp)
-    #     a[name].append(scores)
+        tmp, scores = domino.main(list(map(str,checkedtarget)), network_file, slices_file=output_file_path, slice_threshold=slice_threshold,  module_threshold=module_threshold, prize_factor=prize_factor, n_steps=n_steps)
+        a[name].append(tmp)
+        a[name].append(scores)
 
-    #     return a
+        return a
 
     # elif isinstance(target, clustering) and run_cluster is not None:
     #     a = defaultdict(list)
@@ -241,34 +241,33 @@ def run_domino(target, name=None, is_results=None, scores = None, network_file =
 
     #     return a
 
-    # else:
+    else:
+        a=defaultdict(list)
+        for u,v in target.genelist_clusters.items():
+            scores = []
+            for gene in target.symbs_clusters[u]:
+                if genescores is not None:
+                    if gene in genescores.keys():
+                        scores.append(genescores[gene])
+                    else:
+                        scores.append(1)
 
-    a=defaultdict(list)
-    for u,v in target.genelist_clusters.items():
-        scores = []
-        for gene in target.symbs_clusters[u]:
-            if genescores is not None:
-                if gene in genescores.keys():
-                    scores.append(genescores[gene])
                 else:
                     scores.append(1)
+            ##fornow emp
+            ##TODO scores
+            
+            #scoresdf.to_csv("/nfs/home/students/chit/lrz_ticone/domino_emp/{}_cluster{}_mod.csv".format(name, u), index=False)
+            ### 
+            checkedtarget = _check_nodes(list(map(str,v)), network_file)
+            
+            tmp, scores = domino.main(list(map(str,checkedtarget)), network_file,  slices_file=output_file_path, slice_threshold=slice_threshold,  module_threshold=module_threshold, prize_factor=prize_factor, n_steps=n_steps)
+            a[u].append(tmp)
+            a[u].append(scores)
 
-            else:
-                scores.append(1)
-        ##fornow emp
-        ##TODO scores
-        
-        #scoresdf.to_csv("/nfs/home/students/chit/lrz_ticone/domino_emp/{}_cluster{}_mod.csv".format(name, u), index=False)
-        ### 
-        checkedtarget = _check_nodes(list(map(str,v)), network_file)
-        
-        tmp, scores = domino.main(list(map(str,checkedtarget)), network_file,  slices_file=output_file_path, slice_threshold=slice_threshold,  module_threshold=module_threshold, prize_factor=prize_factor, n_steps=n_steps)
-        a[u].append(tmp)
-        a[u].append(scores)
-
-    print("---------Network enrichment Result---------\n")
-    for u,v in a.items():
-        #for e, vv in enumerate(v[0]):
-        print(f"Cluster {u} found {len(v[0])} module(s).")
-    print("-----END-----")        
-    return a 
+        print("---------Network enrichment Result---------\n")
+        for u,v in a.items():
+            #for e, vv in enumerate(v[0]):
+            print(f"Cluster {u} found {len(v[0])} module(s).")
+        print("-----END-----")        
+        return a 

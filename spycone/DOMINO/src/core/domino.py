@@ -6,6 +6,7 @@ import os
 
 import pandas as pd
 import numpy as np
+from itertools import repeat
 import pickle
 import multiprocessing
 import matplotlib
@@ -63,9 +64,9 @@ def add_scores_to_nodes(G, scores):
     return G
 
 
-def create_subgraph(params):
+def create_subgraph(params, G):
     cur_module = params
-    global G_modularity
+    G_modularity = G
     nodes = set(cur_module)
     res = G_modularity.subgraph(list(nodes))
     return res
@@ -86,7 +87,7 @@ def prune_network_by_modularity(G, modules):
     #print(f"Before slicing: n of cc:{len(list(connected_components(G_modularity)))}, n of nodes: {len(G_modularity.nodes)}, n of edges, {len(G_modularity.edges)#}")
     p = multiprocessing.Pool(N_OF_THREADS)
 
-    G_modules = p.map(create_subgraph, [m for m in modules])
+    G_modules = p.starmap(create_subgraph, zip(modules, repeat(G)))
     p.close()
     # print(f'{modules}')
     #print(f'# of modules after extraction: {len(G_modules)}')
@@ -234,6 +235,7 @@ def get_putative_modules(G, full_G=None, improvement_delta=0, modularity_score_o
 
 def retain_relevant_slices(G_original, module_sig_th):
     global G_modularity
+    print(G_modularity)
 
     pertubed_nodes = []
     for cur_node in G_modularity.nodes():
@@ -344,8 +346,7 @@ def main(active_genes_file, network_file, scores=None, slices_file=None, slice_t
     G = build_network(network_file)
         #pickle.dump(G, open(f'{network_file}.pkl', 'wb+'))
         #print(f'network\' pkl is saved: {network_file}.pkl')
-
-    #print("done building network")
+    
     # assign activeness to nodes
     scores = extract_scores(active_genes_file, scores)
     G = add_scores_to_nodes(G, scores)
@@ -353,14 +354,18 @@ def main(active_genes_file, network_file, scores=None, slices_file=None, slice_t
     modularity_connected_components = read_preprocessed_slices(slices_file)
 
     global G_modularity
+    G_modularity = G 
     prune_network_by_modularity(G, modularity_connected_components)
+    print("here",G_modularity)
     G_modularity, relevant_slices, qvals = retain_relevant_slices(G, slice_threshold)
+    
+    print("here2",G_modularity)
     #print(f'{len(relevant_slices)} relevant slices were retained with threshold {slice_threshold}')
     params = []
     for i_cc, cc in enumerate(relevant_slices):
         params.append([G, cc, i_cc, n_steps, relevant_slices, prize_factor, module_threshold])
     p = multiprocessing.Pool(N_OF_THREADS)
-    putative_modules = reduce(lambda a, b: a + b, p.map(analyze_slice, params), [])
+    putative_modules = reduce(lambda a, b: a + b, p.starmap(analyze_slice, params), [])
     p.close()
     #print(f'n of putative modules: {len(putative_modules)}')
     final_modules, sig_scores = get_final_modules(G, putative_modules)
