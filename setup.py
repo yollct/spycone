@@ -6,7 +6,7 @@ README = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 def setup_package():
     metadata = dict(name='spycone',
-    version='0.1.3',
+    version='0.1.4',
     description='A splicing-aware time course network enricher',
     long_description=README,
     long_description_content_type="text/markdown",
