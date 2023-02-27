@@ -62,10 +62,6 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         plot_clusters = list(clusterObj.index_clusters.keys())
         return_plotly=False
         width = 100*len(plot_clusters)
-    else:
-        return_plotly =True
-        width=300
-        height=300*len(plot_clusters)
 
     ##faster probably
     reorder = []
