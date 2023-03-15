@@ -176,9 +176,19 @@ def clusters_gsea(DataSet, species, gene_sets=None, is_results=None, cutoff=0.05
         
         return enr_results, nease_obj
 
-def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0.05, method="nease", term_source="all"):
+def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0.05, method="gsea", term_source="all"):
     """
-    Perform gene set enrichment on network modules after domino
+    Perform gene set enrichment on network modules after domino. Uses Gprofiler as engine. 
+    
+    Parameters
+    ------------
+    X : modules result
+    
+    clu : cluster Object
+    
+    species : For gprofiler, origanism format are 'hsapiens', 'mmusculus', 'rnorvegicus' etc...
+    
+    term_source : targeted database. default = "all". All as in GO:BP, GO:CC, GO:MF, KEGG, REAC etc.
     """
     mapping = dict(zip(clu.DataSet.gene_id, clu.DataSet.symbs))
     enr_results = defaultdict(lambda: defaultdict(object))
@@ -209,15 +219,17 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
             mct = pvalue_correction(enrh['p_value'], method=p_adjust_method)
             enrh['adj_pval'] = mct.corrected_pvals
             enrh =enrh[enrh['adj_pval']<cutoff]
-            enrh['cluster'] = f"Cluster {u}"
+            enrh['cluster'] = f"Cluster {cluster}"
             enrh['module'] = f"Module {m}"
+            
 
             enr = pd.concat([enrh])
             enr = enr.reset_index(drop=True)
+            enr = enr.rename(columns = {'name':'Term'})
             if term_source != "all":
-                enr_results[cluster][u]=enr[enr['source']=="all"]
+                enr_results[cluster][m]=enr[enr['source']==term_source]
             else:
-                enr_results[cluster][u]=enr
+                enr_results[cluster][m]=enr
             time.sleep(2)
 
             try:
@@ -225,25 +237,14 @@ def modules_gsea(X, clu, species, type="PPI", p_adjust_method="fdr_bh", cutoff=0
             except:
                 continue
             
+            
         time.sleep(2)
 
     print("---------Gene Set Enrichment Result---------\n", file=sys.__stdout__)
     print(f"Method: {method}", file=sys.__stdout__)
     for u,v in enr_results.items():
         for m,vv in v.items():
-            print("Cluster {} Module {}".format(u, m)," found enriched in {} terms.".format(vv[0].shape[0]), file=sys.__stdout__)
+            print("Cluster {} Module {}".format(u, m)," found enriched in {} terms.".format(vv.shape[0]), file=sys.__stdout__)
     print("-----END-----", file=sys.__stdout__)
 
     return enr_results
-
-# def list_genesets(organism):
-#     """
-#     Return a list of gene sets database
-
-#     Parameters
-#     -----------
-#     organism:
-#         human, mouse, etc.
-#     """
-#     return gp.get_library_name(organism)
-
