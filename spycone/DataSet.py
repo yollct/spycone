@@ -51,9 +51,6 @@ class dataset():
     transcript_id 
         list of transcript id if the expression matrix is in transcript-level.
 
-    keytype
-        type of ID in gene list ('entrezgeneid', 'ensemblgeneid'). If only transcript ID is given, this serves as the keytype that will be mapped to gene_id.
-    
     species
         Specifying species ID for annotation (human : 9606, mouse: 10090)
 
@@ -93,7 +90,7 @@ class dataset():
         self, 
         ts, 
         species,
-        keytype,
+        #keytype,
         reps1,
         timepts,
         gtf=None,
@@ -112,7 +109,7 @@ class dataset():
         self.reps1 = reps1
         self.gene_id = gene_id
         self.species=species
-        self.keytype=keytype
+        #self.keytype=keytype
         self.timepts = timepts
         self.timeserieslist = []
         self.symbs = symbs
@@ -131,8 +128,8 @@ class dataset():
         if self.species not in self.SPECIES:
             raise ValueError("Please provide a supported species ID.")
 
-        if self.keytype not in self.KEYTYPE:
-            raise ValueError("Please provide a supported key type.")
+        # if self.keytype not in self.KEYTYPE:
+        #     raise ValueError("Please provide a supported key type.")
 
         ######gene list check
         if self.gene_id is None and self.transcript_id is None:
@@ -145,11 +142,11 @@ class dataset():
             else:
                 TRANS_ID_TYPE = "ensembltransid"
 
-        if self.transcript_id is not None and self.gene_id is None:
-            self.gene_id = _map_trans_to_gene(self.transcript_id, self.keytype, self.species, transid_type=TRANS_ID_TYPE)
+        # if self.transcript_id is not None and self.gene_id is None:
+        #     self.gene_id = _map_trans_to_gene(self.transcript_id, self.keytype, self.species, transid_type=TRANS_ID_TYPE)
 
-        if self.symbs is None:
-            self.symbs = _map_to_gene_name(self.gene_id, self.keytype, self.species, transid_type=TRANS_ID_TYPE)
+        # if self.symbs is None:
+        #     self.symbs = _map_to_gene_name(self.gene_id, self.keytype, self.species, transid_type=TRANS_ID_TYPE)
 
         if not isinstance(self.gene_id, list):
             self.gene_id = [str(x) for x in self.gene_id]

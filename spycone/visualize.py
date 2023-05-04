@@ -363,11 +363,12 @@ def switch_plot(gene, DataSet, ascov, xaxis_label=None, all_isoforms=False, rela
         x axis label for the plots
     """
     try:
-        entrezid = DataSet.gene_id[np.where(DataSet.symbs==gene)[0]]
+        entrezid = DataSet.gene_id[np.where(np.isin(DataSet.symbs, gene))[0][0]]
     except:
-        entrezid = DataSet.gene_id[np.where(DataSet.gene_id==gene)[0]]
+        entrezid = DataSet.gene_id[np.where(np.isin(DataSet.gene_id, gene))[0][0]]
+    #entrezid=gene
 
-    if str(entrezid[0]) in set(ascov['gene']) and all_isoforms==False:
+    if all_isoforms==False and str(entrezid[0]) in set(ascov['gene']):
         ncol = 4
         nrow =  2 if len(entrezid) > 4 else len(entrezid) % 4
     
