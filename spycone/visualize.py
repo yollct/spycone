@@ -59,7 +59,6 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         return_plotly =True
         width=300
         height=300*len(plot_clusters)
-        plot_clusters = list(clusterObj.index_clusters.keys())
         width = 100*len(plot_clusters)
 
     ##faster probably
@@ -109,7 +108,7 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     else:
         fig = px.line(clusters_sns, x="timepoints", y="expression", color="gene", facet_col="clusters", width=width, height=height, facet_col_wrap= col_wrap)
         pro = px.line(cluster_pro, x="timepoints", y="expression", color="clusters", facet_col="clusters", width=width, height=height, facet_col_wrap= col_wrap)
-
+        
         fig.update_traces(line_color='lightgrey')
         for x in range(len(plot_clusters)):
             fig.add_trace(pro.data[x])
