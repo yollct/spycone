@@ -54,10 +54,14 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         plot_clusters = list(clusterObj.index_clusters.keys())
         return_plotly=False
         width = 100*len(plot_clusters)
+        height=500
     else:
         return_plotly =True
         width=300
         height=300*len(plot_clusters)
+        plot_clusters = list(clusterObj.index_clusters.keys())
+        return_plotly=False
+        width = 100*len(plot_clusters)
 
     ##faster probably
     reorder = []
@@ -85,7 +89,8 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
     cluster_pro['type']="prototype"
     cluster_pro['gene']=cluster_pro.index
     cluster_pro = cluster_pro[cluster_pro['clusters'].isin(plot_clusters)]
-
+    # allsns = pd.concat(cluster_sns_list)
+    # sns.relplot(x="timepoints", y="expression",kind="line", hue="cluster", col="cluster",col_wrap=5,  height=3, aspect=.75, linewidth=2.5, palette= "Set2", data=allsns)
     if ncol is None:
         ncol = len(plot_clusters)
         nrow =1 
@@ -112,7 +117,31 @@ def vis_all_clusters(clusterObj, x_label="time points", y_label="expression", Ti
         fig.update_traces(showlegend=False)
         fig.update_traces(hoverinfo='skip')
     
+    # print(clusters_sns.head())
+    # fig = make_subplots(rows=nrow, cols=ncol, shared_yaxes=False, specs=[[{'type':'scatter'}]*len(plot_clusters)])
+    # sr = 1
+    # sc = 1
+    # for x, thisclu in enumerate(plot_clusters):
+    #     x+=1
+    #     tmp=clusters_sns[clusters_sns['clusters']==thisclu].reset_index(drop=True)
+    #     subfig=px.line(tmp, x="timepoints", y="expression", color=tmp["gene"])
+    #     subfig.update_traces({"line":{"color":"lightgray"}})
+    #     fig.add_trace(subfig, row=sr, col=sc)
+    #     if x % ncol == 0:
+    #         sr+=1
+    #     else:
+    #         sc+=1
+        
+
+    #g.set_axis_labels(x_label, y_label, fontsize=13)
+    #g.set_titles(Titles)
+    # if xtickslabels:
+    #     g.set_xticklabels(labels=xtickslabels,rotation=90, ha="right", fontsize=8)
+
+    ##plot prototypes
+    # g = sns.relplot(data=cluster_pro, x="timepoints", y="expression", kind="line", col="clusters",hue="clusters",col_wrap=3, height=3, aspect=.75, linewidth=4, palette="Set2")
     
+        
     if return_plotly:
         return fig
     else:
