@@ -235,7 +235,7 @@ def get_putative_modules(G, full_G=None, improvement_delta=0, modularity_score_o
 
 def retain_relevant_slices(G_original, module_sig_th):
     global G_modularity
-    print(G_modularity)
+    print(G_modularity.nodes)
 
     pertubed_nodes = []
     for cur_node in G_modularity.nodes():
@@ -279,17 +279,23 @@ def retain_relevant_slices(G_original, module_sig_th):
 def pf_filter(params):
     global G_modularity
     n_G_original, cur_cc, i_cur_cc, n_pertubed_nodes, perturbation_factor = params
-    pertubed_nodes_in_cc = [cur_node for cur_node in cur_cc if G_modularity.nodes[cur_node]["pertubed_node"]]
-    if len(cur_cc) < 4 or n_pertubed_nodes == 0 or not (
-            len(pertubed_nodes_in_cc) / float(len(cur_cc)) >= perturbation_factor or len(pertubed_nodes_in_cc) / float(
-            n_pertubed_nodes) >= 0.1):
+    try:
+        pertubed_nodes_in_cc = [cur_node for cur_node in cur_cc if G_modularity.nodes[cur_node]["pertubed_node"]]
+        if len(cur_cc) < 4 or n_pertubed_nodes == 0 or not (
+                len(pertubed_nodes_in_cc) / float(len(cur_cc)) >= perturbation_factor or len(pertubed_nodes_in_cc) / float(
+                n_pertubed_nodes) >= 0.1):
+            return None
+        else:
+            score = hypergeom.sf(len(pertubed_nodes_in_cc), n_G_original, n_pertubed_nodes,
+                                len(cur_cc)) \
+                    + hypergeom.pmf(len(pertubed_nodes_in_cc), n_G_original, n_pertubed_nodes,
+                                    len(cur_cc))
+            return (cur_cc, score)
+    except:
+        #print(G_modularity)
+        #print("this module doesn't have nodes")
         return None
-    else:
-        score = hypergeom.sf(len(pertubed_nodes_in_cc), n_G_original, n_pertubed_nodes,
-                             len(cur_cc)) \
-                + hypergeom.pmf(len(pertubed_nodes_in_cc), n_G_original, n_pertubed_nodes,
-                                len(cur_cc))
-        return (cur_cc, score)
+        
 
 
 def analyze_slice(params):
@@ -356,10 +362,10 @@ def main(active_genes_file, network_file, scores=None, slices_file=None, slice_t
     global G_modularity
     G_modularity = G 
     prune_network_by_modularity(G, modularity_connected_components)
-    print("here",G_modularity)
+    #print("here",G_modularity)
     G_modularity, relevant_slices, qvals = retain_relevant_slices(G, slice_threshold)
     
-    print("here2",G_modularity)
+    #print("here2",G_modularity)
     #print(f'{len(relevant_slices)} relevant slices were retained with threshold {slice_threshold}')
     params = []
     for i_cc, cc in enumerate(relevant_slices):
