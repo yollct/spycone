@@ -14,6 +14,9 @@ Spycone is dependent on the pcst_fast library, which is not available through pi
 pip install https://github.com/fraenkel-lab/pcst_fast/archive/refs/tags/1.0.7.tar.gz
 ```
 
+To visualize networks, we are using pydot package, which required Graphviz installed in your system.
+Please follow the official download instruction for [Graphviz](https://graphviz.org/).
+
 # Installation
 It is available as a pypi package:
 ```
