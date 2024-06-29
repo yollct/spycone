@@ -6,7 +6,7 @@ README = (pathlib.Path(__file__).parent / "README.md").read_text()
 
 def setup_package():
     metadata = dict(name='spycone',
-    version='0.2.0',
+    version='0.2.1',
     description='A splicing-aware time course network enricher',
     long_description=README,
     long_description_content_type="text/markdown",
@@ -27,7 +27,7 @@ def setup_package():
       'pandas>=1.0.1',
       'numpy>=1.22',
       'seaborn',
-      'scikit-learn>=0.23.2',
+      'scikit-learn<=1.2.2',
       'scikit-learn-extra>=0.1.0',
       'networkx>=2.4',
       'matplotlib>=3.1.3',
@@ -38,7 +38,7 @@ def setup_package():
       'python-louvain',
       'plotly>=4.14.3',
       'pydot>=1.4.2',
-      'biopython',
+      'biopython<=1.80',
       'gtfparse',  
       'joblib',
       'nease'])

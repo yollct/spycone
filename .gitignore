@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+*__pycache__/
 *.py[cod]
 *$py.class
 
@@ -139,3 +139,5 @@ docs/source/exons.gtf
 docs/source/newslices.txt
 docs/source/normticonerhino_wide.csv
 *.gaf
+*.pyc
+*.so
