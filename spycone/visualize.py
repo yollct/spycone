@@ -394,8 +394,11 @@ def switch_plot(gene, DataSet, ascov, xaxis_label=None, all_isoforms=False, rela
     except:
         entrezid = DataSet.gene_id[np.where(np.isin(DataSet.gene_id, gene))[0][0]]
     #entrezid=gene
+    if not isinstance(entrezid, list):
+        entrezid = [entrezid]   
 
-    if all_isoforms==False and str(entrezid[0]) in set(ascov['gene']):
+    if all_isoforms==False and np.isin(str(entrezid[0]), ascov['gene']).any():
+        print("here")
         ncol = 4
         nrow =  2 if len(entrezid) > 4 else len(entrezid) % 4
     

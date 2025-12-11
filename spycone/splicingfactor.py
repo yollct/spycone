@@ -15,7 +15,6 @@ from Bio.SeqUtils import GC
 from joblib import Parallel, delayed
 import gc
 
-
 from ._util_stat.multipletesting import pvalue_correction
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -23,44 +22,27 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class SF_coexpression():
     """
     Return the coexpression between Splicing factor and isoforms
-    
-    Parameters 
-    ------------
-    dataset : input dataset object
-
-    padj_method : Multiple testing method. Default=Bonferonni
-
-    corr_cutoff :  Correlation coefficient cutoff. Dafault=0.7
-
-    padj_cutoff : Adjusted p-value cutoff. Default=0.05
-
-    method : Method to calculate the correlation value.
-    
-    Return
-    -------
-    Create an instance for co-expression analysis of splicing factors and transcript abundance.
-
     """
-    def __init__(self, dataset, padj_method="bonf", corr_cutoff=0.7, padj_cutoff = 0.05, method="pearson"):
-        self.dataset=dataset
+    def __init__(self, dataset, padj_method="bonf", corr_cutoff=0.7, padj_cutoff=0.05, method="pearson"):
+        self.dataset = dataset
         self.padj_method = padj_method
         self.corr_cutoff = corr_cutoff
-        self.method= method
-        
+        self.method = method
 
     def _get_splicing_factors(self):
-        sfs=[]
         with open(os.path.join(dir_path, "data/network/splicingfactors.txt"), "r") as f:
-            tmp=f.readlines()
-            for ss in tmp:
-                sfs.append(ss.replace("\n", ""))
+            sfs = [line.strip() for line in f]
 
         sfs = pd.DataFrame(sfs, columns=['GeneSymbol'])
+        
+        # Vectorized mapping
+        symbs_set = set(self.dataset.symbs)
         mapper = dict(zip(self.dataset.symbs, self.dataset.gene_id))
-        sfs['entrezid'] = list(map(lambda x: mapper[x] if x in self.dataset.symbs else None, sfs['GeneSymbol']))
-        sfs = sfs[sfs['GeneSymbol'].isin(self.dataset.symbs)]
-        print(str(np.sum(sfs['GeneSymbol'].isin(self.dataset.symbs)))+" of the splicing factor are in the dataset")
-    
+        
+        sfs['entrezid'] = sfs['GeneSymbol'].map(lambda x: mapper.get(x))
+        sfs = sfs[sfs['GeneSymbol'].isin(symbs_set)]
+        print(f"{len(sfs)} of the splicing factors are in the dataset")
+        
         return sfs
 
     def _get_matrices(self, sfs, timelag=1):
@@ -109,93 +91,103 @@ class SF_coexpression():
 
         assert final_mat.shape[0] == mat_index.shape[0]
         return final_mat, mat_index, final_transcript, final_geneid, final_sfid
-
+    
     def _corrcoef_loop(self, matrix):
         rows, cols = matrix.shape[0], matrix.shape[1]
-        r = np.ones(shape=(rows, rows))
-        p = np.ones(shape=(rows, rows))
-        for i in range(rows):
-            for j in range(i+1, rows):
-                if self.method=="pearson":
-                    r_, p_ = pearsonr(matrix[i], matrix[j])
-                if self.method=="softdtw":
-                    pass
-                r[i, j] = r[j, i] = r_
-                p[i, j] = p[j, i] = p_
+        r = np.corrcoef(matrix)
+            
+        # Compute p-values in parallel
+        p = np.ones((rows, rows))
+        
+        # Vectorized p-value calculation
+        n = matrix.shape[1]
+        t_stat = r * np.sqrt((n - 2) / (1 - r**2 + 1e-10))
+        from scipy.stats import t as t_dist
+        p = 2 * t_dist.sf(np.abs(t_stat), n - 2)
+        np.fill_diagonal(p, 1.0)
+        
         return r, p
 
-
     def _calculate_coexpression(self, final_mat, final_transcript, final_geneid, final_sfid):
-        ##correlation with p values #######tmp read the results below
         sf_iso_mat, sf_iso_pval = self._corrcoef_loop(final_mat)
         
-        ####multiple correction
         mapper = dict(zip(self.dataset.gene_id, self.dataset.symbs))
+        
+        n_trans = len(final_transcript)
+        n_sf = len(final_sfid)
+        
+        # Extract SF-isoform correlations
+        sf_iso_07 = sf_iso_mat[n_trans:, :n_trans]
+        sf_iso_pval_sub = sf_iso_pval[n_trans:, :n_trans]
+        
+        # Vectorized DataFrame construction
+        sf_idx, iso_idx = np.meshgrid(np.arange(n_sf), np.arange(n_trans), indexing='ij')
+        sf_idx = sf_idx.ravel()
+        iso_idx = iso_idx.ravel()
+        
+        sf_iso_df = pd.DataFrame({
+            'sf': [final_sfid[i] for i in sf_idx],
+            'iso': final_transcript[iso_idx],
+            'iso_gene': [final_geneid[i] for i in iso_idx],
+            'iso_genesymb': [mapper[final_geneid[i]] for i in iso_idx],
+            'corr': sf_iso_07.ravel(),
+            'pval': sf_iso_pval_sub.ravel()
+        })
 
-        sf_iso_07 = sf_iso_mat[final_transcript.shape[0]+1:, 0:final_transcript.shape[0]]
-        sf_iso_dict = {"sf":[], "iso":[], "iso_gene":[], "iso_genesymb":[], "corr":[], "pval":[]}
-        for sf in range(sf_iso_07.shape[0]):
-            for iso in range(sf_iso_07.shape[0]):
-                sf_iso_dict['sf'].append(final_sfid[sf])
-                sf_iso_dict['iso'].append(final_transcript[iso])
-                sf_iso_dict['iso_gene'].append(final_geneid[iso])
-                sf_iso_dict['iso_genesymb'].append(mapper[final_geneid[iso]])
-                sf_iso_dict['corr'].append(sf_iso_07[sf,iso])
-                sf_iso_dict['pval'].append(sf_iso_pval[sf][iso])
-
-
-        ##correct for multiple testing
-        sf_iso_df = pd.DataFrame(sf_iso_dict)
         sf_iso_df = sf_iso_df.sort_values("pval")
         mp = pvalue_correction(sf_iso_df['pval'], method=self.padj_method)
-        sf_iso_df['padj']=mp.corrected_pvals
+        sf_iso_df['padj'] = mp.corrected_pvals
         
-        ##cleaning data, 
-        sf_iso_df['cluster'] = list(map(self._map_to_clusters, sf_iso_df['iso_gene']))
-        sf_iso_df = sf_iso_df[(np.abs(sf_iso_df['corr'])>self.corr_cutoff) & (sf_iso_df['padj']<0.05)].sort_values("iso_gene")
-        sf_iso_df['bin_corr'] = [1 if x > 0 else -1 for x in sf_iso_df['corr']]
+        # Vectorized cluster mapping
+        sf_iso_df['cluster'] = sf_iso_df['iso_gene'].map(self._create_cluster_mapper())
+        
+        # Filter
+        mask = (np.abs(sf_iso_df['corr']) > self.corr_cutoff) & (sf_iso_df['padj'] < 0.05)
+        sf_iso_df = sf_iso_df[mask].sort_values("iso_gene")
+        sf_iso_df['bin_corr'] = np.where(sf_iso_df['corr'] > 0, 1, -1)
 
-        sf_group = sf_iso_df.groupby(["bin_corr","iso_gene","iso_genesymb", "cluster"]).aggregate(lambda x: tuple(x))
+        sf_group = sf_iso_df.groupby(["bin_corr", "iso_gene", "iso_genesymb", "cluster"]).aggregate(lambda x: tuple(x))
         if sf_group.shape[0] == 0:
-            return "No significant correlated SF is found."
+            return "No significant correlated SF is found.", None
 
-        everycluster = pd.DataFrame(sf_group.groupby(["cluster", "bin_corr"]).aggregate(lambda x: tuple(x))['sf'].apply(lambda x: np.unique(reduce(lambda a,y: a+y, x)))).reset_index()
-        #union_sf : the sf that are only found in one direction
+        everycluster = pd.DataFrame(
+            sf_group.groupby(["cluster", "bin_corr"]).aggregate(lambda x: tuple(x))['sf']
+            .apply(lambda x: np.unique(reduce(lambda a, y: a + y, x)))
+        ).reset_index()
 
-        
-
-        ####get list of SF that is positively and negatively correlated to at least one of the isoform in the cluster
-        
-        everycluster['diff_sf']=everycluster.groupby("cluster").aggregate(lambda x: list(x))['sf'].apply(lambda x: np.repeat(set(x[0]).symmetric_difference(set(x[1])),2) if len(x)>1 else [x[0]]).explode('sf')
+        everycluster['diff_sf'] = everycluster.groupby("cluster").aggregate(lambda x: list(x))['sf'].apply(
+            lambda x: np.repeat(set(x[0]).symmetric_difference(set(x[1])), 2) if len(x) > 1 else [x[0]]
+        ).explode('sf')
 
         unique_sf = []
-        union_sf =[]
-        for x,s in everycluster.iterrows():
+        union_sf = []
+        for _, s in everycluster.iterrows():
             unique_sf.append(set(s['sf']).intersection(set(s['diff_sf'])))
             union_sf.append(set(s['sf']).difference(set(s['diff_sf'])))
 
-        everycluster['unique_sf']=unique_sf
-        everycluster['union_sf']=union_sf
+        everycluster['unique_sf'] = unique_sf
+        everycluster['union_sf'] = union_sf
         return sf_iso_df, everycluster
 
-    def _map_to_clusters(self, gene):
-        #sf_iso_clu = []
-        #for gene in sf_iso_df['iso_gene']:
-        match=False
-        for u,v in self.dataset.clusterobj.genelist_clusters.items():
-            if gene in set(v):
-                match=True
-                break
-        if match:
-            return u
-        #sf_iso_df['cluster'] = sf_iso_clu
+    def _create_cluster_mapper(self):
+        """Create a dictionary for fast cluster lookup."""
+        cluster_map = {}
+        for cluster_id, genes in self.dataset.clusterobj.genelist_clusters.items():
+            for gene in genes:
+                cluster_map[gene] = cluster_id
+        return cluster_map
 
+    def _map_to_clusters(self, gene):
+        # Kept for backward compatibility
+        for u, v in self.dataset.clusterobj.genelist_clusters.items():
+            if gene in set(v):
+                return u
+        return None
 
     def coexpression_with_sf(self):
         sfs = self._get_splicing_factors()
         final_mat, mat_index, list_transcript, list_geneid, list_sfid = self._get_matrices(sfs)
         sf_iso_df, cluster_sf = self._calculate_coexpression(final_mat, list_transcript, list_geneid, list_sfid)
-
         return sf_iso_df, cluster_sf
 
 def create_motifsobj():

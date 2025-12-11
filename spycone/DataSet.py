@@ -112,9 +112,9 @@ class dataset():
         #self.keytype=keytype
         self.timepts = timepts
         self.timeserieslist = []
-        self.symbs = symbs
         self.transcript_id = transcript_id
         self.discretization_steps = discretization_steps
+        self.symbs = symbs
 
         # if not isinstance(self.reps1, list):
         #     self.reps1 = [self.reps1]
@@ -148,8 +148,7 @@ class dataset():
         # if self.symbs is None:
         #     self.symbs = _map_to_gene_name(self.gene_id, self.keytype, self.species, transid_type=TRANS_ID_TYPE)
 
-        if not isinstance(self.gene_id, list):
-            self.gene_id = [str(x) for x in self.gene_id]
+        self.gene_id = [str(x) for x in self.gene_id]
             
         if not isinstance(self.symbs, (np.ndarray)):
             self.symbs = np.array(self.symbs)
@@ -223,7 +222,9 @@ class dataset():
             tmp = np.expand_dims(np.sum(self.timeserieslist[:,v,:], axis=1),axis=1)
             self.genelevel_expression = np.concatenate([self.genelevel_expression, tmp], axis=1)
             self.genelevel_id.append(u)
-            self.genelevel_symb.append(self.symbs[v[0]])
+            for w in v:
+                self.genelevel_symb.append(self.symbs[w])
+        
         
     def _remove_objects(self, objects_to_remove):
         if not isinstance(objects_to_remove, list):
